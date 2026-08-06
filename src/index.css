@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: 250 249 244;
+  --color-surface: 255 255 255;
+  --color-ink: 31 42 36;
+  --color-muted: 107 117 108;
+  --color-line: 231 226 211;
+}
+
+.dark {
+  --color-bg: 12 20 18;
+  --color-surface: 21 31 28;
+  --color-ink: 234 238 233;
+  --color-muted: 154 165 156;
+  --color-line: 41 54 48;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-bg text-ink font-body antialiased transition-colors duration-300;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(242, 169, 59, 0.08), transparent 40%),
+    radial-gradient(circle at 0% 100%, rgba(15, 110, 93, 0.06), transparent 45%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: #0f6e5d;
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-line));
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c3bda9;
+}
+
+:focus-visible {
+  outline: 2px solid #0f6e5d;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.table-scroll {
+  scrollbar-gutter: stable;
+}
+
+/* Sticky-header table polish used across data tables */
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.glass-card {
+  @apply border border-line bg-surface/90 backdrop-blur;
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #0b4f42 0%, #0f6e5d 55%, #0d5c4e 100%);
+}
