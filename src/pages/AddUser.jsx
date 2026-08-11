@@ -108,7 +108,7 @@ export default function AddUser() {
         </button>
         <h1 className="font-display text-xl font-extrabold text-ink flex items-center gap-2">
           <UserPlus className="text-primary" size={24} />
-          Add Application User
+          Add Role 
         </h1>
       </div>
 

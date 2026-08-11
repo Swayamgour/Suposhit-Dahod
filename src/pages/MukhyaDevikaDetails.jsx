@@ -119,7 +119,8 @@ export default function MukhyaDevikaDetails() {
                     <td className="whitespace-nowrap px-4 py-3 font-mono">{e.registeredChildrenCount}</td>
                     <td className="whitespace-nowrap px-4 py-3">{e.arrivalTime || "-"}</td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <StatusPill value={(e.photos || []).length > 0} />
+                      {/* <StatusPill value={(e.photos || []).length > 0} /> */}
+                      <img src={e?.photos?.[0]?.url || 'http://localhost:5173/logo.jpg'} width={60} />
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <ReviewActions

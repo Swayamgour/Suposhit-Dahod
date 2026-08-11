@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Search, UserPlus, Check, X, Trash2, RefreshCw } from "lucide-react";
+import { Users, Search, UserPlus, Trash2, RefreshCw } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import {
   useGetUsersQuery,
@@ -9,14 +9,38 @@ import {
 } from "../redux/api.jsx";
 import { useAuth, ROLES, ROLE_LABELS, ROLE_ORDER, outranks } from "../context/AuthContext.jsx";
 
+// Small enable/disable toggle switch.
+// checked = true  -> status "accepted" (enabled)
+// checked = false -> status "rejected" (disabled)
+function StatusToggle({ checked, onChange, disabled }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      title={checked ? "Enabled (click to disable)" : "Disabled (click to enable)"}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? "bg-primary" : "bg-coral/40"
+        }`}
+    >
+      <span
+        className={`inline-block h-4.5 w-4.5 h-[18px] w-[18px] transform rounded-full bg-white shadow transition-transform duration-200 ${checked ? "translate-x-6" : "translate-x-1"
+          }`}
+      />
+    </button>
+  );
+}
+
 // Matches GET /api/users?role=&status=&search= exactly
 // (icds-backend/controllers/userController.js).
-export default function ApplicationUsers() {
+export default function ApplicationUsersAwc() {
   const { t } = useLanguage();
   const { role: myRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [togglingId, setTogglingId] = useState(null);
 
   const { data, isLoading, isFetching, error, refetch } = useGetUsersQuery({
     search: searchTerm,
@@ -29,10 +53,13 @@ export default function ApplicationUsers() {
   const [deleteUser] = useDeleteUserMutation();
 
   async function handleStatus(id, status) {
+    setTogglingId(id);
     try {
       await updateStatus({ id, status }).unwrap();
     } catch (err) {
       alert(err?.data?.message || "Could not update status.");
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -125,7 +152,7 @@ export default function ApplicationUsers() {
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">Email</th>
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">Role</th>
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">Scope</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Status</th>
+                {/* <th className="whitespace-nowrap px-4 py-3 font-semibold">Status</th> */}
                 {myRole !== ROLES.AWC && <th className="whitespace-nowrap px-4 py-3 font-semibold">Actions</th>}
               </tr>
             </thead>
@@ -151,37 +178,26 @@ export default function ApplicationUsers() {
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted">
                       {[u.blockCode, u.sectorCode, u.awcCode].filter(Boolean).join(" / ") || u.districtCode}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 capitalize">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${u.status === "accepted"
-                          ? "bg-primary-light text-primary-dark"
-                          : "bg-coral-light text-coral"
-                          }`}
-                      >
-                        {u.status}
-                      </span>
-                    </td>
+                    {/* <td className="whitespace-nowrap px-4 py-3 capitalize">
+                                            <span
+                                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${u.status === "accepted"
+                                                    ? "bg-primary-light text-primary-dark"
+                                                    : "bg-coral-light text-coral"
+                                                    }`}
+                                            >
+                                                {u.status}
+                                            </span>
+                                        </td> */}
                     {myRole !== ROLES.AWC && (
                       <td className="whitespace-nowrap px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {u.status !== "accepted" && (
-                            <button
-                              onClick={() => handleStatus(u._id, "accepted")}
-                              title="Accept"
-                              className="rounded-lg p-1.5 text-primary hover:bg-primary-light"
-                            >
-                              <Check size={16} />
-                            </button>
-                          )}
-                          {u.status !== "rejected" && (
-                            <button
-                              onClick={() => handleStatus(u._id, "rejected")}
-                              title="Reject"
-                              className="rounded-lg p-1.5 text-coral hover:bg-coral-light"
-                            >
-                              <X size={16} />
-                            </button>
-                          )}
+                        <div className="flex items-center gap-3">
+                          <StatusToggle
+                            checked={u.status === "accepted"}
+                            disabled={togglingId === u._id}
+                            onChange={(nextChecked) =>
+                              handleStatus(u._id, nextChecked ? "accepted" : "rejected")
+                            }
+                          />
                           {outranks(myRole, u.role) && (
                             <button
                               onClick={() => handleDelete(u._id)}

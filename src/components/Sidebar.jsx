@@ -16,16 +16,16 @@ const ALL = Object.values(ROLES);
 const NAV_LINKS = [
   { to: "/", labelKey: "sidebar.dashboard", icon: LayoutDashboard, end: true, roles: ALL },
   { to: "/applications", label: "Application Dashboard", end: true, icon: AppWindow, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR] },
+  { to: "/applications/users", label: "Role manage", end: true, icon: AppWindow, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR] },
   { to: "/workers", labelKey: "sidebar.workers", icon: ClipboardList, roles: ALL },
   { to: "/mukhya-sevika", label: "Mukhya Sevika", icon: ClipboardList, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR] },
   { to: "/tasks", label: "Tasks", icon: ListTodo, roles: ALL },
   // { to: "/grades", label: "Performance", icon: Award, roles: ALL },
   // { to: "/notices", label: "Notices", icon: Bell, roles: ALL },
   { to: "/reports", label: "Reports", icon: FileDown, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR] },
-  { to: "/applications/users", label: "Application user", end: true, icon: AppWindow, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR] },
   // { to: "/applications/users/new", label: "Application Dashboard", icon: AppWindow, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR] },
   { to: "/charts", labelKey: "sidebar.charts", icon: BarChart3, roles: ALL },
-  { to: "/info", labelKey: "sidebar.info", icon: Info, roles: ALL },
+  // { to: "/info", labelKey: "sidebar.info", icon: Info, roles: ALL },
 ];
 
 export default function Sidebar({ open, onClose }) {
@@ -55,9 +55,9 @@ export default function Sidebar({ open, onClose }) {
               <p className="font-display text-[15px] font-extrabold leading-tight tracking-tight">
                 {t("sidebar.brand")}
               </p>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">
+              {/* <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">
                 {t("sidebar.tagline")}
-              </p>
+              </p> */}
             </div>
           </div>
           <button

@@ -97,6 +97,7 @@ export default function WorkerList() {
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">Milk Pouch Count</th>
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">Afternoon Menu</th>
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">Quality</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">image</th>
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">Approval</th>
               </tr>
             </thead>
@@ -132,6 +133,7 @@ export default function WorkerList() {
                     <td className="whitespace-nowrap px-4 py-3 font-mono">{r.milkPouchCount}</td>
                     <td className="whitespace-nowrap px-4 py-3">{r.afternoonMenu || "-"}</td>
                     <td className="whitespace-nowrap px-4 py-3 capitalize">{r.qualityOfMeal || "-"}</td>
+                    <td className="whitespace-nowrap px-4 py-3 capitalize"><img src={r?.photos?.[0]?.url || 'http://localhost:5173/logo.jpg'} /></td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <ReviewActions
                         status={r.status}

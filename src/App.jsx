@@ -17,6 +17,8 @@ import GradesPage from "./pages/GradesPage.jsx";
 import NoticesPage from "./pages/NoticesPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import { useAuth, ROLES } from "./context/AuthContext.jsx";
+import ApplicationUsersAwc from "./pages/ApplicationUsersAwc.jsx";
+import Profile from "./pages/Profile.jsx";
 
 // Wraps a route element and only renders it if the logged-in user's role is
 // in `allow`. Mirrors the backend's own role checks (authorize / role ===
@@ -70,6 +72,22 @@ export default function App() {
           element={
             <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
               <ApplicationUsers />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="/AwcUser"
+          element={
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+              <ApplicationUsersAwc />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="/Profile"
+          element={
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+              <Profile />
             </RoleGate>
           }
         />

@@ -42,9 +42,9 @@ export default function Login({ onSuccess }) {
           </div>
           <div>
             <p className="font-display text-lg font-extrabold tracking-tight">Suposhit Dahod</p>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">
+            {/* <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">
               {t("login.badge")}
-            </p>
+            </p> */}
           </div>
         </div>
 
@@ -60,7 +60,7 @@ export default function Login({ onSuccess }) {
 
           <div className="mt-8 grid grid-cols-3 gap-4">
             {[
-              [t("login.stat1"), "1,300+"],
+              // [t("login.stat1"), "1,300+"],
               [t("login.stat2"), "122"],
               [t("login.stat3"), "24/7"],
             ].map(([label, val]) => (
@@ -72,7 +72,10 @@ export default function Login({ onSuccess }) {
           </div>
         </div>
 
-        <p className="relative z-10 text-[11px] leading-relaxed text-white/50">{t("login.footer")}</p>
+        <p className="relative z-10 text-[11px] leading-relaxed text-white/50 cursor-pointer" onClick={() => {
+          window.location.href = "https://riveyrainfotech.com/";
+        }}
+        >{t("login.footer")}</p>
       </div>
 
       {/* Right / form panel */}
@@ -120,9 +123,9 @@ export default function Login({ onSuccess }) {
                 <label className="block text-xs font-semibold uppercase tracking-wide text-muted">
                   {t("login.password")}
                 </label>
-                <button type="button" className="text-xs font-semibold text-primary hover:underline">
+                {/* <button type="button" className="text-xs font-semibold text-primary hover:underline">
                   {t("login.forgot")}
-                </button>
+                </button> */}
               </div>
               <div className="relative">
                 <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
@@ -166,10 +169,10 @@ export default function Login({ onSuccess }) {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-muted">
+          {/* <p className="mt-8 text-center text-sm text-muted">
             {t("login.noAccount")}{" "}
             <button className="font-semibold text-primary hover:underline">{t("login.signup")}</button>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

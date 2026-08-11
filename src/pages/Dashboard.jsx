@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { Filter, Building2, UtensilsCrossed, LayoutDashboard, Search, RefreshCw } from "lucide-react";
+import { Filter, Building2, UtensilsCrossed, LayoutDashboard, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import SunArc from "../components/SunArc.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
-import { useGetDashboardQuery } from "../redux/api.jsx";
+import { useGetDashboardQuery, useGetMeQuery } from "../redux/api.jsx";
 
 const statCards = [
   { key: "totalCentres", icon: Building2, tone: "primary", labelKey: "dash.card1" },
@@ -78,6 +78,18 @@ function flattenRow(row) {
   ];
 }
 
+function computeColumnTotals(rows) {
+  const totals = new Array(headers.length).fill(0);
+  rows.forEach((row) => {
+    const cells = flattenRow(row);
+    cells.forEach((val, idx) => {
+      if (idx === 0) return; // skip sector name column
+      totals[idx] += val ?? 0;
+    });
+  });
+  return totals;
+}
+
 export default function Dashboard() {
   const { t } = useLanguage();
   const [fromDate, setFromDate] = useState("");
@@ -85,10 +97,16 @@ export default function Dashboard() {
   const [appliedRange, setAppliedRange] = useState({ fromDate: "", toDate: "" });
   const [area, setArea] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
 
   // GET /api/dashboard?fromDate=&toDate= - auto-scoped server-side by role
   const { data, isLoading, isFetching, error, refetch } = useGetDashboardQuery(appliedRange);
   const sectors = data?.sectors || [];
+
+
+  const { data: profile } = useGetMeQuery()
+  console.log(data)
 
   const stats = useMemo(() => {
     const totalCentres = sectors.reduce((s, r) => s + (r.totalAwc || 0), 0);
@@ -107,17 +125,19 @@ export default function Dashboard() {
     });
   }, [sectors, area, search]);
 
-  function computeColumnTotals(rows) {
-    const totals = new Array(headers.length).fill(0);
-    rows.forEach((row) => {
-      const cells = flattenRow(row);
-      cells.forEach((val, idx) => {
-        if (idx === 0) return; // skip sector name column
-        totals[idx] += val ?? 0;
-      });
-    });
-    return totals;
-  }
+  // Reset page whenever filters/date-range change the result set
+  React.useEffect(() => {
+    setPage(1);
+  }, [area, search, appliedRange]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    return filteredRows.slice(start, start + rowsPerPage);
+  }, [filteredRows, page]);
+
+  // Totals are computed over ALL filtered rows, not just the visible page
   const columnTotals = useMemo(() => computeColumnTotals(filteredRows), [filteredRows]);
 
   function applyFilter() {
@@ -128,9 +148,6 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
-            {t("dash.overview")}
-          </p>
           <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("dash.title")}</h1>
           <p className="mt-1 text-sm text-muted">{t("dash.sub")}</p>
         </div>
@@ -261,14 +278,14 @@ export default function Dashboard() {
                     Loading dashboard...
                   </td>
                 </tr>
-              ) : filteredRows.length === 0 ? (
+              ) : paginatedRows.length === 0 ? (
                 <tr>
                   <td colSpan={headers.length} className="px-4 py-8 text-center text-sm text-muted">
                     No sectors found in your scope.
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((row, i) => {
+                paginatedRows.map((row, i) => {
                   const cells = flattenRow(row);
                   return (
                     <tr
@@ -311,6 +328,37 @@ export default function Dashboard() {
             )}
           </table>
         </div>
+
+        {/* Pagination controls */}
+        {filteredRows.length > 0 && (
+          <div className="flex items-center justify-between border-t border-line px-5 py-3">
+            <span className="text-xs font-medium text-muted">
+              Showing {(page - 1) * rowsPerPage + 1}-
+              {Math.min(page * rowsPerPage, filteredRows.length)} of {filteredRows.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+              <span className="text-xs font-semibold text-ink">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

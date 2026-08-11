@@ -136,7 +136,7 @@ export default function ApplicationDashboard() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Link to="/applications/users" className="flex items-center gap-1.5 rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary-light transition-colors">
+                        <Link to="/AwcUser" className="flex items-center gap-1.5 rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary-light transition-colors">
                           <Users size={14} />
                           {t("appdash.users")}
                         </Link>

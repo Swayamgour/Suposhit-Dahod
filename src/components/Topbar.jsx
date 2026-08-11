@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Menu, Search, ListChecks, Moon, Sun, LogOut, ChevronDown } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Menu, Search, ListChecks, Moon, Sun, LogOut, ChevronDown, User } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useAuth, ROLE_LABELS } from "../context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
 
 const THEME_KEY = "suposhit-dahod-theme";
 
@@ -20,11 +21,36 @@ export default function Topbar({ onMenuClick, onLogout }) {
   const { user } = useAuth();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
     localStorage.setItem(THEME_KEY, dark ? "dark" : "light");
   }, [dark]);
+
+  // Close the dropdown on any click/tap outside of it
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [menuOpen]);
+
+  const navigate = useNavigate()
+
+  const onProfileClick = () => {
+    navigate('/Profile')
+  }
 
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-surface/90 px-4 py-3 backdrop-blur lg:px-8">
@@ -36,22 +62,22 @@ export default function Topbar({ onMenuClick, onLogout }) {
         <Menu size={20} />
       </button>
 
-      <div className="relative flex-1 max-w-md">
+      {/* <div className="relative flex-1 max-w-md">
         <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
         <input
           type="text"
           placeholder={t("topbar.search")}
           className="w-full rounded-xl border border-line bg-bg py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
-      </div>
+      </div> */}
 
       <div className="ml-auto flex items-center gap-1.5">
-        <button
+        {/* <button
           className="hidden rounded-lg p-2.5 text-muted hover:bg-primary/10 hover:text-primary sm:inline-flex"
           title={t("topbar.approvals")}
         >
           <ListChecks size={18} />
-        </button>
+        </button> */}
         <button
           onClick={() => setDark((d) => !d)}
           className="hidden rounded-lg p-2.5 text-muted transition-colors hover:bg-primary/10 hover:text-primary sm:inline-flex"
@@ -62,7 +88,7 @@ export default function Topbar({ onMenuClick, onLogout }) {
         </button>
         <LanguageSwitcher />
 
-        <div className="relative ml-1">
+        <div className="relative ml-1" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((o) => !o)}
             className="flex items-center gap-2.5 rounded-xl border border-line py-1.5 pl-1.5 pr-2.5 hover:bg-bg"
@@ -84,7 +110,20 @@ export default function Topbar({ onMenuClick, onLogout }) {
           {menuOpen && (
             <div className="absolute right-0 top-full mt-2 w-44 overflow-hidden rounded-xl border border-line bg-surface shadow-card animate-scale-in">
               <button
-                onClick={onLogout}
+                onClick={() => {
+                  setMenuOpen(false);
+                  onProfileClick?.();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm text-ink hover:bg-bg"
+              >
+                <User size={16} />
+                {"Profile"}
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onLogout?.();
+                }}
                 className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm text-coral hover:bg-coral-light"
               >
                 <LogOut size={16} />

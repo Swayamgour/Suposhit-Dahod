@@ -25,7 +25,8 @@ export function ReviewActions({ status, canReview, onReview, loading }) {
   const [remarks, setRemarks] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
 
-  if (!canReview || status !== "pending") return <StatusBadge status={status} />;
+  // No review rights, or already rejected (final state) -> just show the badge
+  if (!canReview || status === "rejected") return <StatusBadge status={status} />;
 
   if (remarksOpen) {
     return (
@@ -51,6 +52,25 @@ export function ReviewActions({ status, canReview, onReview, loading }) {
     );
   }
 
+  // status === "approved": show the badge plus a Reject option, no Approve button
+  if (status === "approved") {
+    return (
+      <div className="flex items-center gap-1.5">
+        <StatusBadge status={status} />
+        <button
+          onClick={() => {
+            setPendingAction("rejected");
+            setRemarksOpen(true);
+          }}
+          className="inline-flex items-center gap-1 rounded-md bg-coral-light px-2 py-1 text-xs font-semibold text-coral hover:bg-coral/20"
+        >
+          <X size={12} /> Reject
+        </button>
+      </div>
+    );
+  }
+
+  // status === "pending": show both Approve and Reject
   return (
     <div className="flex items-center gap-1.5">
       <button

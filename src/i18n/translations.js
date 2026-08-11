@@ -30,7 +30,7 @@ export const translations = {
     "login.stat1": "Centres",
     "login.stat2": "Sectors",
     "login.stat3": "Sync",
-    "login.footer": "Managed by Government of Gujarat · Powered by NCS² No-Code Platform Pvt. Ltd.",
+    "login.footer": "Managed by Government of Gujarat · Powered by Riveyra Infotech Pvt. Ltd.",
     "login.welcome": "Welcome back",
     "login.title": "Sign in to your account",
     "login.desc": "Use the email or mobile number registered for your Anganwadi centre.",
