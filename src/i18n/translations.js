@@ -156,7 +156,7 @@ export const translations = {
     "appdash.col.actions": "Actions",
     "appdash.users": "Users",
 
-    "appusers.title": "SUPOSHIT DAHOD WORKER Application User List",
+    "appusers.title": "SUPOSHIT DAHOD  ROLE USER LIST",
     "appusers.search": "Search user...",
     "appusers.role": "--Role--",
     "appusers.status": "Status",
