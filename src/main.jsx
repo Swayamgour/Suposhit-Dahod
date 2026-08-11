@@ -6,6 +6,7 @@ import { LanguageProvider } from "./i18n/LanguageContext.jsx";
 import "./index.css";
 import { Provider } from "react-redux";
 import { store } from './redux/store.jsx'
+import { AuthProvider } from "./context/AuthContext.jsx";
 
 // Apply saved theme before first paint to avoid a flash of the wrong theme.
 const savedTheme = localStorage.getItem("suposhit-dahod-theme");
@@ -18,9 +19,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <LanguageProvider>
       <Provider store={store}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
       </Provider>
     </LanguageProvider>
   </React.StrictMode>

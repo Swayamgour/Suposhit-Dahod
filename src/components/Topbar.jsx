@@ -2,11 +2,22 @@ import React, { useEffect, useState } from "react";
 import { Menu, Search, ListChecks, Moon, Sun, LogOut, ChevronDown } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useAuth, ROLE_LABELS } from "../context/AuthContext.jsx";
 
 const THEME_KEY = "suposhit-dahod-theme";
 
+function initials(name = "") {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("") || "U";
+}
+
 export default function Topbar({ onMenuClick, onLogout }) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -57,13 +68,15 @@ export default function Topbar({ onMenuClick, onLogout }) {
             className="flex items-center gap-2.5 rounded-xl border border-line py-1.5 pl-1.5 pr-2.5 hover:bg-bg"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-light font-display text-xs font-extrabold text-accent-dark">
-              BB
+              {initials(user?.name)}
             </span>
             <span className="hidden text-left sm:block">
               <span className="block text-xs font-semibold leading-tight text-ink">
-                Bavaka-2 Bavaka
+                {user?.name || "-"}
               </span>
-              <span className="block text-[11px] leading-tight text-muted">{t("topbar.role")}</span>
+              <span className="block text-[11px] leading-tight text-muted">
+                {ROLE_LABELS[user?.role] || t("topbar.role")}
+              </span>
             </span>
             <ChevronDown size={14} className="hidden text-muted sm:block" />
           </button>

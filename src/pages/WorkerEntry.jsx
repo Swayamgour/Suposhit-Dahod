@@ -1,13 +1,19 @@
 import React, { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Save, X, Trash2, List as ListIcon, ImagePlus, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Save, X, List as ListIcon } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useCreateRecordMutation } from "../redux/api.jsx";
+import PhotoGpsCapture from "../components/PhotoGpsCapture.jsx";
 
+// Fields match icds-backend/models/Record.js exactly. districtCode/blockCode/
+// sectorCode/awcCode/*Name fields are filled in server-side from the logged
+// in AWC user, so the form only needs to send the record's own data.
 const sections = [
   { id: "general", label: "સામાન્ય વિગત" },
-  { id: "noon", label: "બપોરે નાસ્તાની વિગત" },
-  { id: "nutrition", label: "પોષણ આહારની વિગત" },
-  { id: "general2", label: "સામાન્ય વિગતો ૨" },
+  { id: "morning", label: "સવારે નાસ્તાની વિગત" },
+  { id: "afternoon", label: "બપોરે નાસ્તાની વિગત" },
+  { id: "extra", label: "પોષણ / પૂર્વ-શિક્ષણ" },
+  { id: "proof", label: "GPS & Photo Proof" },
 ];
 
 function Field({ label, required, hint, children }) {
@@ -23,14 +29,84 @@ function Field({ label, required, hint, children }) {
   );
 }
 
-const selectClass =
+const inputClass =
   "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+const selectClass = inputClass;
+
+const emptyForm = {
+  date: new Date().toISOString().slice(0, 10),
+  registeredChildrenCount: "",
+  centerOpen: true,
+
+  // Morning
+  morningMealChildrenCount: "",
+  morningMenu: "", // NEW: today's morning dish name
+  morningDishPhoto: false,
+  childrenEatingBreakfastPhoto: false,
+  milkPouchGiven: false,
+  milkPouchCount: "",
+
+  // Afternoon
+  afternoonMealGiven: false,
+  afternoonMealChildrenCount: "",
+  afternoonMenu: "", // NEW: today's afternoon dish name
+  afternoonDishPhoto: false, // NEW: બપોરના નાસ્તાની ડીશનો ફોટો
+  childrenEatingAfternoonPhoto: false, // NEW: બપોરનો નાસ્તો જમતા બાળકોનો ફોટો
+
+  // Pre-education
+  preEducationConducted: false,
+  preEducationChildrenCount: "",
+  preEducationPhoto: false, // NEW: પૂર્વ પ્રાથમિક શિક્ષણ ફોટો
+
+  // Poshan Sudha Yojana
+  poshanDishGiven: false,
+  poshanMenu: "", // NEW: today's poshan sudha dish name
+  poshanBenefitGiven: false,
+  poshanSudhaCount: "", // NEW: પોષણ સુધા યોજનાનો લાભ લેતા લાભાર્થીની સંખ્યા
+  photoBeneficiariesNutrition: false,
+
+  qualityOfMeal: "good",
+  remarks: "",
+};
 
 export default function WorkerEntry() {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const { id } = useParams();
   const [active, setActive] = useState("general");
+  const [form, setForm] = useState(emptyForm);
+  const [location, setLocation] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [error, setError] = useState("");
+  const [createRecord, { isLoading: saving }] = useCreateRecordMutation();
+
+  const set = (key) => (e) => {
+    const val = e?.target ? (e.target.type === "checkbox" ? e.target.checked : e.target.value) : e;
+    setForm((f) => ({ ...f, [key]: val }));
+  };
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    try {
+      // POST /api/records - awc role only (enforced server-side)
+      const payload = {
+        ...form,
+        registeredChildrenCount: Number(form.registeredChildrenCount) || 0,
+        morningMealChildrenCount: Number(form.morningMealChildrenCount) || 0,
+        milkPouchCount: Number(form.milkPouchCount) || 0,
+        afternoonMealChildrenCount: Number(form.afternoonMealChildrenCount) || 0,
+        preEducationChildrenCount: Number(form.preEducationChildrenCount) || 0,
+        poshanSudhaCount: Number(form.poshanSudhaCount) || 0,
+        checkInLatitude: location?.latitude,
+        checkInLongitude: location?.longitude,
+        photos,
+      };
+      await createRecord(payload).unwrap();
+      navigate("/workers");
+    } catch (err) {
+      setError(err?.data?.message || "Could not save the record.");
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -39,205 +115,308 @@ export default function WorkerEntry() {
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
             {t("list.records")}
           </p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">
-            {t("list.title")} <span className="text-muted">/ {id ? "Edit" : "Entry"}</span>
-          </h1>
+          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">Center Daily Record</h1>
+          <p className="mt-1 text-sm text-muted">Submit today's Anganwadi center record (AWC role only).</p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2 text-xs text-muted shadow-soft">
-          <MapPin size={13} />
-          Bavaka-2 · Bavaka · Dahod-1
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/workers")}
+            className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
+          >
+            <ListIcon size={16} />
+            List
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[220px,1fr]">
-        {/* Section rail */}
-        <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
-          {sections.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => setActive(s.id)}
-              className={`flex shrink-0 items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-sm font-medium transition-colors lg:shrink ${
-                active === s.id
-                  ? "border-primary bg-primary-light text-primary-dark"
-                  : "border-line bg-surface text-muted hover:bg-bg"
+      {error && (
+        <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
+          {error}
+        </div>
+      )}
+
+      <div className="flex gap-2 overflow-x-auto border-b border-line pb-px">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => setActive(s.id)}
+            className={`whitespace-nowrap rounded-t-lg px-4 py-2.5 text-sm font-semibold transition-colors ${active === s.id
+              ? "border-b-2 border-primary text-primary"
+              : "text-muted hover:text-ink"
               }`}
-            >
-              <span
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-bold ${
-                  active === s.id ? "bg-primary text-white" : "bg-bg text-muted"
-                }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-line bg-surface p-6 shadow-card space-y-8">
+        {active === "general" && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Date" required>
+              <input type="date" required value={form.date} onChange={set("date")} className={inputClass} />
+            </Field>
+            <Field label="Registered children (3-6 yrs)" required>
+              <input
+                type="number"
+                min="0"
+                required
+                value={form.registeredChildrenCount}
+                onChange={set("registeredChildrenCount")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Center open today?">
+              <select
+                value={form.centerOpen ? "yes" : "no"}
+                onChange={(e) => set("centerOpen")(e.target.value === "yes")}
+                className={selectClass}
               >
-                {i + 1}
-              </span>
-              <span className="whitespace-nowrap lg:whitespace-normal">{s.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* Form panel */}
-        <div className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
-          {active === "general" && (
-            <div className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="તારીખ" required>
-                  <input type="date" defaultValue="2026-08-03" className={selectClass} />
-                </Field>
-                <Field label="ઘટકનું નામ" required>
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>ઘટકનું નામ</option>
-                    <option>Dahod-1</option>
-                    <option>Dahod-2</option>
-                    <option>Dahod-3</option>
-                  </select>
-                </Field>
-                <Field label="સેજાનું નામ" required>
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>સેજાનું નામ</option>
-                    <option>Bavaka</option>
-                    <option>Afva</option>
-                    <option>Agavada</option>
-                  </select>
-                </Field>
-                <Field label="આંગણવાડી કેન્દ્રનું નામ" required>
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>આંગણવાડી કેન્દ્રનું નામ</option>
-                    <option>Bavaka-1</option>
-                    <option>Bavaka-2</option>
-                    <option>Bavaka-3</option>
-                  </select>
-                </Field>
-                <Field label="રજીસ્ટર બાળકોની સંખ્યા (૩ થી ૬ વર્ષ)">
-                  <input type="number" placeholder="0" className={selectClass} />
-                </Field>
-                <Field label="આંગણવાડી કેન્દ્ર ખુલ્લું છે?">
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>--Select--</option>
-                    <option>હા</option>
-                    <option>ના</option>
-                  </select>
-                </Field>
-                <Field label="આંગણવાડી કાર્યકરનું નામ">
-                  <input type="text" placeholder="Worker name" className={selectClass} />
-                </Field>
-                <Field label="આંગણવાડી તેડાગરનું નામ">
-                  <input type="text" placeholder="Helper name" className={selectClass} />
-                </Field>
-              </div>
-              <Field label="આંગણવાડી કેન્દ્રનું સ્થાન" required>
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary-light/40 py-3 text-sm font-semibold text-primary-dark hover:bg-primary-light"
-                >
-                  <MapPin size={15} />
-                  Capture current location
-                </button>
-              </Field>
-            </div>
-          )}
-
-          {active === "noon" && (
-            <div className="space-y-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                સવારે ૧૧:૩૦ થી બપોરે ૧:૩૦ વાગ્યા વચ્ચે
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="સવારનો નાસ્તો આપેલ છે?">
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>--Select--</option>
-                    <option>હા</option>
-                    <option>ના</option>
-                  </select>
-                </Field>
-                <Field label="સવારના નાસ્તાનું મેનુ">
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>--Select--</option>
-                    <option>પૌંઆ</option>
-                    <option>ઉપમા</option>
-                    <option>શીરો</option>
-                    <option>મગ દાળ</option>
-                  </select>
-                </Field>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <UploadBox label="સવારના નાસ્તાની થાળીનો ફોટો-૧" />
-                <UploadBox label="સવારના નાસ્તા માટે હાજર બાળકોનો ફોટો" />
-              </div>
-            </div>
-          )}
-
-          {active === "nutrition" && (
-            <div className="space-y-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                સવારે ૧૧:૩૦ થી બપોરે ૧:૩૦ વાગ્યા વચ્ચે
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="પોષણ સુધા મેનુ સ્વીકારેલ છે?">
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>--Select--</option>
-                    <option>હા</option>
-                    <option>ના</option>
-                  </select>
-                </Field>
-                <Field label="પોષણ સુધા મેનુ">
-                  <select className={selectClass} defaultValue="">
-                    <option value="" disabled>--Select--</option>
-                    <option>ખીચડી</option>
-                    <option>શાક, દાળ અને રોટલી</option>
-                    <option>ફળ અને દૂધ</option>
-                  </select>
-                </Field>
-              </div>
-              <UploadBox label="પોષણ સુધા થાળીનો ફોટો" />
-            </div>
-          )}
-
-          {active === "general2" && (
-            <div className="space-y-4">
-              <Field label="સામાન્ય નોંધ / અવલોકન" hint="કોઈ વધારાની માહિતી હોય તો અહીં લખો">
-                <textarea rows={5} className={`${selectClass} resize-none`} placeholder="Notes…" />
-              </Field>
-            </div>
-          )}
-
-          <div className="mt-8 flex flex-wrap items-center gap-2 border-t border-line pt-5">
-            <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary-dark">
-              <Save size={15} />
-              Save
-            </button>
-            <button
-              onClick={() => navigate("/workers")}
-              className="flex items-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-ink hover:bg-bg"
-            >
-              <X size={15} />
-              Cancel
-            </button>
-            {id && (
-              <button className="flex items-center gap-2 rounded-lg border border-coral/30 bg-coral-light px-4 py-2.5 text-sm font-semibold text-coral hover:bg-coral hover:text-white">
-                <Trash2 size={15} />
-                Delete
-              </button>
-            )}
-            <button
-              onClick={() => navigate("/workers")}
-              className="ml-auto flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-muted hover:bg-bg hover:text-ink"
-            >
-              <ListIcon size={15} />
-              Back to list
-            </button>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </Field>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        )}
 
-function UploadBox({ label }) {
-  return (
-    <Field label={label}>
-      <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-bg py-6 text-center hover:border-primary/50">
-        <ImagePlus size={20} className="text-muted" />
-        <p className="text-xs text-muted">Tap to add photo</p>
-      </div>
-    </Field>
+        {active === "morning" && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Children who got morning breakfast">
+              <input
+                type="number"
+                min="0"
+                value={form.morningMealChildrenCount}
+                onChange={set("morningMealChildrenCount")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Today's morning menu / dish name" hint="e.g. બુધવાર: શીરો">
+              <input
+                type="text"
+                value={form.morningMenu}
+                onChange={set("morningMenu")}
+                className={inputClass}
+                placeholder="e.g. બુધવાર: શીરો"
+              />
+            </Field>
+            <Field label="Milk pouch count (Doodh Sanjeevani)">
+              <input
+                type="number"
+                min="0"
+                value={form.milkPouchCount}
+                onChange={set("milkPouchCount")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Morning dish photo taken?">
+              <select
+                value={form.morningDishPhoto ? "yes" : "no"}
+                onChange={(e) => set("morningDishPhoto")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Children-eating photo taken?">
+              <select
+                value={form.childrenEatingBreakfastPhoto ? "yes" : "no"}
+                onChange={(e) => set("childrenEatingBreakfastPhoto")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Milk pouch photo taken? (Doodh Sanjeevani)">
+              <select
+                value={form.milkPouchGiven ? "yes" : "no"}
+                onChange={(e) => set("milkPouchGiven")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+          </div>
+        )}
+
+        {active === "afternoon" && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Afternoon meal given?">
+              <select
+                value={form.afternoonMealGiven ? "yes" : "no"}
+                onChange={(e) => set("afternoonMealGiven")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Children who got afternoon meal">
+              <input
+                type="number"
+                min="0"
+                value={form.afternoonMealChildrenCount}
+                onChange={set("afternoonMealChildrenCount")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Today's afternoon menu / dish name" hint="e.g. બુધવાર: દાળ, ભાત અને શાક">
+              <input
+                type="text"
+                value={form.afternoonMenu}
+                onChange={set("afternoonMenu")}
+                className={inputClass}
+                placeholder="e.g. બુધવાર: દાળ, ભાત અને શાક"
+              />
+            </Field>
+            <Field label="Afternoon dish photo taken?">
+              <select
+                value={form.afternoonDishPhoto ? "yes" : "no"}
+                onChange={(e) => set("afternoonDishPhoto")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Children-eating-afternoon-snack photo taken?">
+              <select
+                value={form.childrenEatingAfternoonPhoto ? "yes" : "no"}
+                onChange={(e) => set("childrenEatingAfternoonPhoto")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Quality of meal today">
+              <select value={form.qualityOfMeal} onChange={set("qualityOfMeal")} className={selectClass}>
+                <option value="good">Good</option>
+                <option value="average">Average</option>
+                <option value="bad">Bad</option>
+              </select>
+            </Field>
+          </div>
+        )}
+
+        {active === "extra" && (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Pre-education conducted?">
+              <select
+                value={form.preEducationConducted ? "yes" : "no"}
+                onChange={(e) => set("preEducationConducted")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Children in pre-education">
+              <input
+                type="number"
+                min="0"
+                value={form.preEducationChildrenCount}
+                onChange={set("preEducationChildrenCount")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Pre-education photo taken?">
+              <select
+                value={form.preEducationPhoto ? "yes" : "no"}
+                onChange={(e) => set("preEducationPhoto")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Today's Poshan Sudha menu / dish name">
+              <input
+                type="text"
+                value={form.poshanMenu}
+                onChange={set("poshanMenu")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Poshan Sudha beneficiary count">
+              <input
+                type="number"
+                min="0"
+                value={form.poshanSudhaCount}
+                onChange={set("poshanSudhaCount")}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Poshan dish given?">
+              <select
+                value={form.poshanDishGiven ? "yes" : "no"}
+                onChange={(e) => set("poshanDishGiven")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Poshan benefit given?">
+              <select
+                value={form.poshanBenefitGiven ? "yes" : "no"}
+                onChange={(e) => set("poshanBenefitGiven")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Poshan Sudha benefit photo taken?">
+              <select
+                value={form.photoBeneficiariesNutrition ? "yes" : "no"}
+                onChange={(e) => set("photoBeneficiariesNutrition")(e.target.value === "yes")}
+                className={selectClass}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </Field>
+            <Field label="Remarks">
+              <textarea
+                rows={3}
+                value={form.remarks}
+                onChange={set("remarks")}
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        )}
+
+        {active === "proof" && (
+          <div className="max-w-md">
+            <PhotoGpsCapture photos={photos} onPhotosChange={setPhotos} onLocationChange={setLocation} />
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 border-t border-line pt-5">
+          <button
+            type="button"
+            onClick={() => navigate("/workers")}
+            className="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink hover:bg-bg"
+          >
+            <X size={16} />
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
+          >
+            <Save size={16} />
+            {saving ? "Saving..." : "Save Record"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

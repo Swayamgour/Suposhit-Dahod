@@ -3,19 +3,29 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
 import SunArc from "../components/SunArc.jsx";
 import LanguageSwitcher from "../components/LanguageSwitcher.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useLoginUserMutation } from "../redux/api.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login({ onSuccess }) {
   const { t } = useLanguage();
+  const { login } = useAuth();
   const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loginUser, { isLoading: loading }] = useLoginUserMutation();
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError("");
+    try {
+      // POST /api/auth/login -> { success, token, user }
+      const res = await loginUser({ email, password }).unwrap();
+      login(res);
       onSuccess?.();
-    }, 500);
+    } catch (err) {
+      setError(err?.data?.message || "Login failed. Check your email and password.");
+    }
   }
 
   return (
@@ -95,9 +105,11 @@ export default function Login({ onSuccess }) {
               <div className="relative">
                 <Mail size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
                 <input
-                  type="text"
+                  type="email"
                   required
-                  defaultValue="bavaka2@suposhitdahod.in"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@suposhitdahod.in"
                   className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3 text-sm text-ink shadow-soft focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
@@ -117,7 +129,9 @@ export default function Login({ onSuccess }) {
                 <input
                   type={showPw ? "text" : "password"}
                   required
-                  defaultValue="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-10 text-sm text-ink shadow-soft focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 <button
@@ -129,6 +143,12 @@ export default function Login({ onSuccess }) {
                 </button>
               </div>
             </div>
+
+            {error && (
+              <p className="rounded-lg bg-coral-light px-3 py-2 text-xs font-semibold text-coral">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"

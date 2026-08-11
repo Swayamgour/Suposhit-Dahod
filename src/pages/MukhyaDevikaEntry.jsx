@@ -1,231 +1,175 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { List, Info, Paperclip, Check, RotateCcw, X } from "lucide-react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { List, Check, X } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useCreateMukhyaSevikaEntryMutation, useGetAwcsQuery } from "../redux/api.jsx";
+import PhotoGpsCapture from "../components/PhotoGpsCapture.jsx";
 
+const inputClass =
+  "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+
+// Fields match icds-backend/models/MukhyaSevikaEntry.js exactly. district/
+// block/sector codes + names are filled server-side from the logged in
+// sector (MS/Supervisor) user, so the form only asks for the AWC visited
+// plus the visit's own data.
 export default function MukhyaDevikaEntry() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+
+  // GET /api/hierarchy/awc - auto-scoped to this sector user's own AWCs
+  const { data: awcData, isLoading: loadingAwcs } = useGetAwcsQuery();
+  const awcs = awcData?.awcs || [];
+
+  const [form, setForm] = useState({
+    awcCode: "",
+    date: new Date().toISOString().slice(0, 10),
+    registeredChildrenCount: "",
+    arrivalTime: "",
+    remarks: "",
+  });
+  const [location, setLocation] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [createEntry, { isLoading: saving }] = useCreateMukhyaSevikaEntryMutation();
+
+  const set = (key) => (e) => {
+    const val = e?.target ? (e.target.type === "checkbox" ? e.target.checked : e.target.value) : e;
+    setForm((f) => ({ ...f, [key]: val }));
+  };
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    if (!form.awcCode) {
+      setError("Please select the AWC you visited.");
+      return;
+    }
+    try {
+      // POST /api/mukhya-sevika - sector role only (enforced server-side)
+      await createEntry({
+        ...form,
+        registeredChildrenCount: Number(form.registeredChildrenCount) || 0,
+        checkInLatitude: location?.latitude,
+        checkInLongitude: location?.longitude,
+        photos,
+      }).unwrap();
+      navigate("/mukhya-sevika");
+    } catch (err) {
+      setError(err?.data?.message || "Could not save the visit entry.");
+    }
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-      {/* Header section with Breadcrumb */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-2xl font-extrabold text-ink flex items-center gap-2">
           <List className="text-primary" size={28} />
           {t("mukhya.form.title")}
         </h1>
+        <button
+          type="button"
+          onClick={() => navigate("/mukhya-sevika")}
+          className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
+        >
+          <List size={16} />
+          List
+        </button>
       </div>
 
+      {error && (
+        <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
+          {error}
+        </div>
+      )}
+
       <div className="rounded-2xl border border-line bg-surface shadow-card">
-        {/* Card Header */}
         <div className="flex items-center justify-between border-b border-line px-5 py-4 bg-bg/50">
           <h2 className="text-lg font-bold text-ink">{t("mukhya.form.heading")}</h2>
-          <button
-            className="rounded-full p-2 text-primary hover:bg-primary/10 transition-colors"
-            title="Form information"
-          >
-            <Info size={20} />
-          </button>
         </div>
 
-        {/* Card Body / Form */}
-        <div className="p-5 space-y-6">
-          <form className="space-y-8">
-            
-            {/* Section 1: General Information 1 */}
-            <fieldset className="rounded-xl border border-line p-5">
-              <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">
-                {t("mukhya.form.section1")}
-              </legend>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-                
-                {/* Component Name */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.component")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <select className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                    <option value="">{t("mukhya.form.select")} {t("mukhya.form.component")}</option>
-                  </select>
-                </div>
-
-                {/* Sector Name */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.sector")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <select className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                    <option value="">{t("mukhya.form.select")} {t("mukhya.form.sector")}</option>
-                  </select>
-                </div>
-
-                {/* Mukhya Sevika Name */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.sevikaName")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <input 
-                    type="text" 
-                    placeholder={t("mukhya.form.sevikaName")}
-                    className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                {/* Number of Registered Children */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.regChildren")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <input 
-                    type="number" 
-                    placeholder={t("mukhya.form.regChildren")}
-                    className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                {/* Anganwadi Center Name */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.anganwadiName")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <select className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                    <option value="">{t("mukhya.form.select")} {t("mukhya.form.anganwadiName")}</option>
-                  </select>
-                </div>
-
-                {/* Arrival Photo */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.arrivalPhoto")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <div className="relative flex items-center">
-                    <input 
-                      type="text" 
-                      readOnly 
-                      placeholder={t("mukhya.form.chooseFile")}
-                      className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm cursor-pointer pr-12 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                    <button type="button" className="absolute right-2 p-1.5 text-muted hover:text-primary transition-colors">
-                      <Paperclip size={18} />
-                    </button>
-                  </div>
-                  {/* Image Preview Placeholder */}
-                  <div className="mt-2 h-24 w-32 rounded-lg border border-line overflow-hidden bg-bg/50">
-                     <img src="https://suposhitdahod.dahodsmartcity.in/api/api/image/th/1757921296575?t=1785925288941" alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-
-                {/* Registered children 3-6 */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.regChildren3to6")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <input 
-                    type="number" 
-                    readOnly
-                    placeholder={t("mukhya.form.regChildren3to6")}
-                    className="w-full rounded-lg border border-line bg-bg/50 px-4 py-2.5 text-sm text-muted cursor-not-allowed"
-                  />
-                </div>
-
-                {/* Present children at visit */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.presentChildren")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <input 
-                    type="number" 
-                    placeholder={t("mukhya.form.presentChildren")}
-                    className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-6">
+          <fieldset className="rounded-xl border border-line p-5">
+            <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">
+              {t("mukhya.form.section1")}
+            </legend>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink">
+                  AWC Center <span className="text-coral">*</span>
+                </label>
+                <select
+                  required
+                  value={form.awcCode}
+                  onChange={set("awcCode")}
+                  className={inputClass}
+                >
+                  <option value="">{loadingAwcs ? "Loading..." : "Select AWC"}</option>
+                  {awcs.map((a) => (
+                    <option key={a.code} value={a.code}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </fieldset>
-
-            {/* Section 2: Registers */}
-            <fieldset className="rounded-xl border border-line p-5">
-              <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">
-                {t("mukhya.form.section2")}
-              </legend>
-              <div className="grid grid-cols-1 gap-6 mt-2">
-                
-                {[
-                  t("mukhya.form.reg1"), 
-                  t("mukhya.form.reg2"), 
-                  t("mukhya.form.reg3"), 
-                  t("mukhya.form.reg4")
-                ].map((regLabel, i) => (
-                  <div key={i} className="space-y-1.5 md:w-1/2">
-                    <label className="flex items-center text-sm font-semibold text-ink">
-                      {regLabel}
-                      <Info size={14} className="ml-2 text-muted" />
-                    </label>
-                    <select className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                      <option value="">{t("mukhya.form.select")} {regLabel}</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-                ))}
-                
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink">
+                  Visit Date <span className="text-coral">*</span>
+                </label>
+                <input type="date" required value={form.date} onChange={set("date")} className={inputClass} />
               </div>
-            </fieldset>
-
-            {/* Section 3: General Information 2 */}
-            <fieldset className="rounded-xl border border-line p-5">
-              <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">
-                {t("mukhya.form.section3")}
-              </legend>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-                
-                {/* Pre-primary Photo */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-sm font-semibold text-ink">
-                    {t("mukhya.form.preprimaryPhoto")}
-                    <Info size={14} className="ml-2 text-muted" />
-                  </label>
-                  <div className="relative flex items-center">
-                    <input 
-                      type="text" 
-                      readOnly 
-                      placeholder={t("mukhya.form.chooseFile")}
-                      className="w-full rounded-lg border border-line bg-bg px-4 py-2.5 text-sm cursor-pointer pr-12 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
-                    <button type="button" className="absolute right-2 p-1.5 text-muted hover:text-primary transition-colors">
-                      <Paperclip size={18} />
-                    </button>
-                  </div>
-                </div>
-
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink">Registered children count</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.registeredChildrenCount}
+                  onChange={set("registeredChildrenCount")}
+                  className={inputClass}
+                />
               </div>
-            </fieldset>
-
-            {/* Form Actions */}
-            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line pt-6">
-               <button type="button" className="flex items-center gap-2 rounded-xl border border-line bg-bg px-5 py-2.5 text-sm font-bold text-ink hover:bg-surface hover:shadow-sm transition-all">
-                  <RotateCcw size={16} />
-                  {t("mukhya.form.reset")}
-               </button>
-               <Link to="/mukhya-sevika" className="flex items-center gap-2 rounded-xl border border-line bg-bg px-5 py-2.5 text-sm font-bold text-ink hover:bg-surface hover:shadow-sm transition-all">
-                  <X size={16} />
-                  {t("mukhya.form.close")}
-               </Link>
-               <button type="submit" className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-soft hover:bg-primary-dark transition-colors">
-                  <Check size={16} />
-                  {t("mukhya.form.submit")}
-               </button>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink">Arrival time</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 10:30 AM"
+                  value={form.arrivalTime}
+                  onChange={set("arrivalTime")}
+                  className={inputClass}
+                />
+              </div>
             </div>
+          </fieldset>
 
-          </form>
-        </div>
+          <fieldset className="rounded-xl border border-line p-5">
+            <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">Visit Details</legend>
+            <div className="mt-2 space-y-4">
+              <PhotoGpsCapture photos={photos} onPhotosChange={setPhotos} onLocationChange={setLocation} />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-ink">Remarks</label>
+                <textarea rows={3} value={form.remarks} onChange={set("remarks")} className={inputClass} />
+              </div>
+            </div>
+          </fieldset>
+
+          <div className="flex justify-end gap-3 border-t border-line pt-5">
+            <button
+              type="button"
+              onClick={() => navigate("/mukhya-sevika")}
+              className="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink hover:bg-bg"
+            >
+              <X size={16} />
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
+            >
+              <Check size={16} />
+              {saving ? "Saving..." : "Save Visit"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
