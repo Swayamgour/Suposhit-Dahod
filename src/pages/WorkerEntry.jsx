@@ -111,10 +111,10 @@ export default function WorkerEntry() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    if (!isWithinEntryWindow()) {
-      setError("Entry is only allowed between 9:30 AM and 1:30 PM. Please try again during this window.");
-      return;
-    }
+    // if (!isWithinEntryWindow()) {
+    //   setError("Entry is only allowed between 9:30 AM and 1:30 PM. Please try again during this window.");
+    //   return;
+    // }
 
     // photos is an array of { key, url, latitude, longitude, accuracy,
     // capturedAt } built by PhotoGpsCapture - key matches one of the 6
@@ -131,16 +131,16 @@ export default function WorkerEntry() {
       };
     }
 
-    if (form.activityStatus === "present") {
-      const missing = PHOTO_SLOTS.filter((slot) => !photoFields[slot.key]);
-      if (missing.length > 0) {
-        setError(
-          `Please capture all required photos first. Missing: ${missing.map((s) => s.label).join(", ")}`
-        );
-        setActive("proof");
-        return;
-      }
-    }
+    // if (form.activityStatus === "present") {
+    //   const missing = PHOTO_SLOTS.filter((slot) => !photoFields[slot.key]);
+    //   if (missing.length > 0) {
+    //     setError(
+    //       `Please capture all required photos first. Missing: ${missing.map((s) => s.label).join(", ")}`
+    //     );
+    //     setActive("proof");
+    //     return;
+    //   }
+    // }
 
     try {
       // POST /api/records - awc role only (enforced server-side)
@@ -422,7 +422,7 @@ export default function WorkerEntry() {
           </button>
           <button
             type="submit"
-            disabled={saving || !withinWindow}
+            // disabled={saving || !withinWindow}
             title={!withinWindow ? "Entry allowed only between 9:30 AM - 1:30 PM" : undefined}
             className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
           >
