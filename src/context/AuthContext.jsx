@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 
 // Roles mirror icds-backend/config/roles.js exactly
 export const ROLES = {
@@ -65,6 +65,16 @@ export function AuthProvider({ children }) {
     login,
     logout,
   };
+
+  // redux/api.jsx (RTK Query baseQuery) and utils/apiClient.js (plain fetch
+  // for uploads/report downloads) both dispatch this event whenever a
+  // request comes back 401 ("Not authorized, token invalid/expired/no
+  // token"). Listening here means the login screen shows up wherever the
+  // user is in the app, with no full page reload.
+  useEffect(() => {
+    window.addEventListener("auth:session-expired", logout);
+    return () => window.removeEventListener("auth:session-expired", logout);
+  }, [logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -9,7 +9,16 @@ function getToken() {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
 }
 
-const baseQuery = fetchBaseQuery({
+// Signals AuthContext (see its "auth:session-expired" listener) to log the
+// user out and drop them back on the login screen - used wherever a request
+// comes back 401 (RTK Query base query below, and the plain-fetch upload /
+// report-download helpers in utils/apiClient.js). No full page reload, so
+// in-progress state elsewhere in the app isn't lost unnecessarily.
+export function handleSessionExpired() {
+    window.dispatchEvent(new Event("auth:session-expired"));
+}
+
+const rawBaseQuery = fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: (headers) => {
         const token = getToken();
@@ -18,6 +27,18 @@ const baseQuery = fetchBaseQuery({
         return headers;
     },
 });
+
+// Any expired/invalid-token response (401 from the auth middleware, e.g.
+// "Not authorized, token invalid" / "Not authorized, no token" / "Not
+// authorized, token expired") clears the session and kicks back to login,
+// instead of every page having to check for it individually.
+const baseQuery = async (args, api, extraOptions) => {
+    const result = await rawBaseQuery(args, api, extraOptions);
+    if (result.error?.status === 401) {
+        handleSessionExpired();
+    }
+    return result;
+};
 
 export const api = createApi({
     reducerPath: "api",
@@ -338,6 +359,10 @@ export async function downloadReport(path, filename) {
     const res = await fetch(`${BASE_URL}${path}`, {
         headers: { authorization: `Bearer ${getToken()}` },
     });
+    if (res.status === 401) {
+        handleSessionExpired();
+        return;
+    }
     if (!res.ok) throw new Error("Report download failed");
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);

@@ -7,6 +7,8 @@
 //      return a file stream, not JSON, so we fetch as a Blob and trigger a
 //      normal browser download instead of routing it through the store.
 
+import { handleSessionExpired } from "../redux/api.jsx";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 function getToken() {
@@ -27,6 +29,10 @@ export async function uploadPhotos(files) {
   });
 
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    handleSessionExpired();
+    return [];
+  }
   if (!res.ok || !data.success) {
     throw new Error(data.message || "Photo upload failed.");
   }
@@ -58,6 +64,10 @@ export async function downloadReport(path, filename, query = "") {
     headers: { authorization: `Bearer ${getToken()}` },
   });
 
+  if (res.status === 401) {
+    handleSessionExpired();
+    return;
+  }
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.message || "Could not generate the report.");
