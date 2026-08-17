@@ -126,6 +126,32 @@ export default function PhotoGpsCapture({
   const [activeSlot, setActiveSlot] =
     useState(null);
 
+  const stopCamera = () => {
+    try {
+      // Stop all camera tracks
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+
+        streamRef.current = null;
+      }
+
+      // Remove stream from video
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      }
+    } catch (error) {
+      console.error("Stop camera error:", error);
+    }
+
+    setCameraOpen(false);
+    setCameraLoading(false);
+    setCapturing(false);
+    setActiveSlot(null);
+  };
+
   const [
     uploadPhotos,
     { isLoading: uploading },
@@ -144,38 +170,137 @@ export default function PhotoGpsCapture({
     );
   };
 
+
+  useEffect(() => {
+    if (!cameraOpen || !streamRef.current || !videoRef.current) {
+      return;
+    }
+
+    const video = videoRef.current;
+
+    video.srcObject = streamRef.current;
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+      } catch (error) {
+        console.error("Video play error:", error);
+        setCameraError(
+          "Camera started but preview could not be displayed."
+        );
+      }
+    };
+
+    playVideo();
+
+    return () => {
+      // Don't stop stream here.
+      // stopCamera() will handle stream cleanup.
+    };
+  }, [cameraOpen]);
+
   /*
   |--------------------------------------------------------------------------
   | STOP CAMERA
   |--------------------------------------------------------------------------
   */
 
-  const stopCamera = () => {
-    try {
-      if (streamRef.current) {
-        streamRef.current
-          .getTracks()
-          .forEach((track) => {
-            track.stop();
-          });
-
-        streamRef.current = null;
-      }
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-    } catch (error) {
-      console.error(
-        "Stop camera error:",
-        error
-      );
+  const startCamera = async (slot) => {
+    if (disabled || cameraLoading || cameraOpen) {
+      return;
     }
 
-    setCameraOpen(false);
-    setCameraLoading(false);
-    setCapturing(false);
-    setActiveSlot(null);
+    setActiveSlot(slot);
+    setCameraError("");
+    setUploadError("");
+    setLocError("");
+    setCameraLoading(true);
+
+    try {
+      // ------------------------------------
+      // 1. Get GPS
+      // ------------------------------------
+      let currentLocation = location;
+
+      if (!currentLocation) {
+        currentLocation = await captureLocation();
+      }
+
+      if (
+        !currentLocation ||
+        currentLocation.latitude == null ||
+        currentLocation.longitude == null
+      ) {
+        throw new Error(
+          "Valid GPS location is required before taking a photo."
+        );
+      }
+
+      // ------------------------------------
+      // 2. Check camera support
+      // ------------------------------------
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Camera is not supported by this browser. Please use Chrome or another supported browser."
+        );
+      }
+
+      // ------------------------------------
+      // 3. Open camera
+      // ------------------------------------
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: {
+            ideal: "environment",
+          },
+          width: {
+            ideal: 1280,
+          },
+          height: {
+            ideal: 720,
+          },
+        },
+        audio: false,
+      });
+
+      console.log("Camera stream started:", stream);
+      console.log("Camera tracks:", stream.getVideoTracks());
+
+      streamRef.current = stream;
+
+      // IMPORTANT:
+      // First render camera modal
+      setCameraOpen(true);
+    } catch (error) {
+      console.error("Camera open error:", error);
+
+      let message = "Unable to open camera.";
+
+      if (error?.name === "NotAllowedError") {
+        message =
+          "Camera permission is denied. Please allow camera permission from browser settings.";
+      } else if (error?.name === "NotFoundError") {
+        message =
+          "No camera was found on this device.";
+      } else if (error?.name === "NotReadableError") {
+        message =
+          "Camera is already being used by another application.";
+      } else if (error?.name === "SecurityError") {
+        message =
+          "Camera is blocked because this page is not using a secure connection.";
+      } else if (error?.name === "OverconstrainedError") {
+        message =
+          "Requested camera is not available. Trying default camera.";
+      } else if (error?.message) {
+        message = error.message;
+      }
+
+      setCameraError(message);
+
+      stopCamera();
+    } finally {
+      setCameraLoading(false);
+    }
   };
 
   /*
@@ -298,95 +423,7 @@ export default function PhotoGpsCapture({
   |--------------------------------------------------------------------------
   */
 
-  const startCamera = async (
-    slot
-  ) => {
-    if (disabled) return;
 
-    if (cameraOpen) {
-      return;
-    }
-
-    setActiveSlot(slot);
-    setCameraError("");
-    setUploadError("");
-    setLocError("");
-    setCameraLoading(true);
-
-    try {
-      /*
-       * First get GPS.
-       * Camera will NOT open if GPS is unavailable.
-       */
-      const currentLocation =
-        await captureLocation();
-
-      if (
-        !currentLocation?.latitude ||
-        !currentLocation?.longitude
-      ) {
-        throw new Error(
-          "Valid GPS location is required before taking a photo."
-        );
-      }
-
-      /*
-       * Browser camera support
-       */
-      if (
-        !navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia
-      ) {
-        throw new Error(
-          "Camera is not supported by this browser."
-        );
-      }
-
-      /*
-       * Request rear camera
-       */
-      const stream =
-        await navigator.mediaDevices.getUserMedia(
-          CAMERA_CONSTRAINTS
-        );
-
-      streamRef.current =
-        stream;
-
-      setCameraOpen(true);
-
-      /*
-       * Attach camera stream to video
-       */
-      if (videoRef.current) {
-        videoRef.current.srcObject =
-          stream;
-
-        try {
-          await videoRef.current.play();
-        } catch (error) {
-          console.log(
-            "Video autoplay:",
-            error
-          );
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Camera open error:",
-        error
-      );
-
-      setCameraError(
-        error?.message ||
-        "Unable to open camera."
-      );
-
-      stopCamera();
-    } finally {
-      setCameraLoading(false);
-    }
-  };
 
   /*
   |--------------------------------------------------------------------------
@@ -895,8 +932,8 @@ export default function PhotoGpsCapture({
               <div
                 key={slot.key}
                 className={`overflow-hidden rounded-xl border bg-surface transition ${photo
-                    ? "border-green-200"
-                    : "border-line"
+                  ? "border-green-200"
+                  : "border-line"
                   }`}
               >
 
@@ -1322,9 +1359,9 @@ export default function PhotoGpsCapture({
 
       <div
         className={`rounded-xl border px-4 py-3 ${capturedCount ===
-            totalPhotos
-            ? "border-green-200 bg-green-50"
-            : "border-amber-200 bg-amber-50"
+          totalPhotos
+          ? "border-green-200 bg-green-50"
+          : "border-amber-200 bg-amber-50"
           }`}
       >
 
@@ -1345,9 +1382,9 @@ export default function PhotoGpsCapture({
 
           <p
             className={`text-sm font-bold ${capturedCount ===
-                totalPhotos
-                ? "text-green-700"
-                : "text-amber-700"
+              totalPhotos
+              ? "text-green-700"
+              : "text-amber-700"
               }`}
           >
             {capturedCount ===
