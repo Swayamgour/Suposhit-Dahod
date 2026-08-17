@@ -133,7 +133,19 @@ export default function WorkerList() {
                     <td className="whitespace-nowrap px-4 py-3 font-mono">{r.milkPouchCount}</td>
                     <td className="whitespace-nowrap px-4 py-3">{r.afternoonMenu || "-"}</td>
                     <td className="whitespace-nowrap px-4 py-3 capitalize">{r.qualityOfMeal || "-"}</td>
-                    <td className="whitespace-nowrap px-4 py-3 capitalize"><img src={r?.photos?.[0]?.url || 'http://localhost:5173/logo.jpg'} /></td>
+                    <td className="whitespace-nowrap px-4 py-3 capitalize">
+                      <img
+                        src={
+                          r?.morningDishPhoto?.url ||
+                          r?.afternoonDishPhoto?.url ||
+                          r?.childrenEatingBreakfastPhoto?.url ||
+                          r?.photos?.[0]?.url ||
+                          "http://localhost:5173/logo.jpg"
+                        }
+                        alt="Record proof"
+                        className="h-10 w-10 rounded-lg object-cover"
+                      />
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <ReviewActions
                         status={r.status}

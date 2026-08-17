@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Save, X, List as ListIcon } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useCreateRecordMutation } from "../redux/api.jsx";
-import PhotoGpsCapture from "../components/PhotoGpsCapture.jsx";
+import PhotoGpsCapture, { PHOTO_SLOTS } from "../components/PhotoGpsCapture.jsx";
 
 // Fields match icds-backend/models/Record.js exactly. districtCode/blockCode/
 // sectorCode/awcCode/*Name fields are filled in server-side from the logged
@@ -33,16 +33,28 @@ const inputClass =
   "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 const selectClass = inputClass;
 
+// Entry window: AWC workers can only submit today's record between 9:30 AM
+// and 1:30 PM. Backend must enforce this too (client-side check is only a
+// convenience - a server-side check is required, see notes below).
+const ENTRY_WINDOW_START_MIN = 9 * 60 + 30; // 9:30 AM
+const ENTRY_WINDOW_END_MIN = 13 * 60 + 30; // 1:30 PM
+
+function isWithinEntryWindow(d = new Date()) {
+  const mins = d.getHours() * 60 + d.getMinutes();
+  return mins >= ENTRY_WINDOW_START_MIN && mins <= ENTRY_WINDOW_END_MIN;
+}
+
 const emptyForm = {
   date: new Date().toISOString().slice(0, 10),
   registeredChildrenCount: "",
   centerOpen: true,
 
+  // NEW: today's activity status - present (normal entry), meeting, or leave
+  activityStatus: "present",
+
   // Morning
   morningMealChildrenCount: "",
   morningMenu: "", // NEW: today's morning dish name
-  morningDishPhoto: false,
-  childrenEatingBreakfastPhoto: false,
   milkPouchGiven: false,
   milkPouchCount: "",
 
@@ -50,24 +62,28 @@ const emptyForm = {
   afternoonMealGiven: false,
   afternoonMealChildrenCount: "",
   afternoonMenu: "", // NEW: today's afternoon dish name
-  afternoonDishPhoto: false, // NEW: બપોરના નાસ્તાની ડીશનો ફોટો
-  childrenEatingAfternoonPhoto: false, // NEW: બપોરનો નાસ્તો જમતા બાળકોનો ફોટો
 
   // Pre-education
   preEducationConducted: false,
   preEducationChildrenCount: "",
-  preEducationPhoto: false, // NEW: પૂર્વ પ્રાથમિક શિક્ષણ ફોટો
 
   // Poshan Sudha Yojana
   poshanDishGiven: false,
   poshanMenu: "", // NEW: today's poshan sudha dish name
   poshanBenefitGiven: false,
   poshanSudhaCount: "", // NEW: પોષણ સુધા યોજનાનો લાભ લેતા લાભાર્થીની સંખ્યા
-  photoBeneficiariesNutrition: false,
 
   qualityOfMeal: "good",
   remarks: "",
 };
+
+// The 6 required photos (morningDishPhoto, childrenEatingBreakfastPhoto,
+// afternoonDishPhoto, childrenEatingAfternoonPhoto, preEducationPhoto,
+// photoBeneficiariesNutrition) are no longer plain true/false flags on the
+// form - they live in the `photos` array below, captured live via the
+// camera in PhotoGpsCapture and already uploaded to Cloudinary the moment
+// they're taken. Submitting the form maps that array onto these same 6
+// field names, matching models/Record.js exactly.
 
 export default function WorkerEntry() {
   const { t } = useLanguage();
@@ -79,6 +95,14 @@ export default function WorkerEntry() {
   const [error, setError] = useState("");
   const [createRecord, { isLoading: saving }] = useCreateRecordMutation();
 
+  // Re-check the entry-time window every 30s so the banner/lock updates live
+  // if the worker leaves the tab open across 1:30 PM.
+  const [withinWindow, setWithinWindow] = useState(() => isWithinEntryWindow());
+  React.useEffect(() => {
+    const id = setInterval(() => setWithinWindow(isWithinEntryWindow()), 30000);
+    return () => clearInterval(id);
+  }, []);
+
   const set = (key) => (e) => {
     const val = e?.target ? (e.target.type === "checkbox" ? e.target.checked : e.target.value) : e;
     setForm((f) => ({ ...f, [key]: val }));
@@ -87,6 +111,37 @@ export default function WorkerEntry() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    if (!isWithinEntryWindow()) {
+      setError("Entry is only allowed between 9:30 AM and 1:30 PM. Please try again during this window.");
+      return;
+    }
+
+    // photos is an array of { key, url, latitude, longitude, accuracy,
+    // capturedAt } built by PhotoGpsCapture - key matches one of the 6
+    // Record photo field names exactly (see PHOTO_SLOTS), so map it onto
+    // those named fields the backend expects.
+    const photoFields = {};
+    for (const photo of photos) {
+      if (!photo?.key || !photo?.url) continue;
+      photoFields[photo.key] = {
+        url: photo.url,
+        latitude: photo.latitude,
+        longitude: photo.longitude,
+        capturedAt: photo.capturedAt,
+      };
+    }
+
+    if (form.activityStatus === "present") {
+      const missing = PHOTO_SLOTS.filter((slot) => !photoFields[slot.key]);
+      if (missing.length > 0) {
+        setError(
+          `Please capture all required photos first. Missing: ${missing.map((s) => s.label).join(", ")}`
+        );
+        setActive("proof");
+        return;
+      }
+    }
+
     try {
       // POST /api/records - awc role only (enforced server-side)
       const payload = {
@@ -99,7 +154,7 @@ export default function WorkerEntry() {
         poshanSudhaCount: Number(form.poshanSudhaCount) || 0,
         checkInLatitude: location?.latitude,
         checkInLongitude: location?.longitude,
-        photos,
+        ...photoFields,
       };
       await createRecord(payload).unwrap();
       navigate("/workers");
@@ -136,6 +191,12 @@ export default function WorkerEntry() {
         </div>
       )}
 
+      {!withinWindow && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+          This form can only be filled between 9:30 AM and 1:30 PM. You can still review it, but Save is disabled right now.
+        </div>
+      )}
+
       <div className="flex gap-2 overflow-x-auto border-b border-line pb-px">
         {sections.map((s) => (
           <button
@@ -155,9 +216,9 @@ export default function WorkerEntry() {
       <form onSubmit={handleSubmit} className="rounded-2xl border border-line bg-surface p-6 shadow-card space-y-8">
         {active === "general" && (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Date" required>
+            {/* <Field label="Date" required>
               <input type="date" required value={form.date} onChange={set("date")} className={inputClass} />
-            </Field>
+            </Field> */}
             <Field label="Registered children (3-6 yrs)" required>
               <input
                 type="number"
@@ -176,6 +237,13 @@ export default function WorkerEntry() {
               >
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
+              </select>
+            </Field>
+            <Field label="Today's status" hint="Select Meeting or Leave if you are not at the centre today">
+              <select value={form.activityStatus} onChange={set("activityStatus")} className={selectClass}>
+                <option value="present">Present (normal entry)</option>
+                <option value="meeting">Meeting</option>
+                <option value="leave">Leave</option>
               </select>
             </Field>
           </div>
@@ -210,27 +278,7 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Morning dish photo taken?">
-              <select
-                value={form.morningDishPhoto ? "yes" : "no"}
-                onChange={(e) => set("morningDishPhoto")(e.target.value === "yes")}
-                className={selectClass}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </Field>
-            <Field label="Children-eating photo taken?">
-              <select
-                value={form.childrenEatingBreakfastPhoto ? "yes" : "no"}
-                onChange={(e) => set("childrenEatingBreakfastPhoto")(e.target.value === "yes")}
-                className={selectClass}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </Field>
-            <Field label="Milk pouch photo taken? (Doodh Sanjeevani)">
+            <Field label="Milk pouch given? (Doodh Sanjeevani)">
               <select
                 value={form.milkPouchGiven ? "yes" : "no"}
                 onChange={(e) => set("milkPouchGiven")(e.target.value === "yes")}
@@ -273,26 +321,6 @@ export default function WorkerEntry() {
                 placeholder="e.g. બુધવાર: દાળ, ભાત અને શાક"
               />
             </Field>
-            <Field label="Afternoon dish photo taken?">
-              <select
-                value={form.afternoonDishPhoto ? "yes" : "no"}
-                onChange={(e) => set("afternoonDishPhoto")(e.target.value === "yes")}
-                className={selectClass}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </Field>
-            <Field label="Children-eating-afternoon-snack photo taken?">
-              <select
-                value={form.childrenEatingAfternoonPhoto ? "yes" : "no"}
-                onChange={(e) => set("childrenEatingAfternoonPhoto")(e.target.value === "yes")}
-                className={selectClass}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </Field>
             <Field label="Quality of meal today">
               <select value={form.qualityOfMeal} onChange={set("qualityOfMeal")} className={selectClass}>
                 <option value="good">Good</option>
@@ -323,16 +351,6 @@ export default function WorkerEntry() {
                 onChange={set("preEducationChildrenCount")}
                 className={inputClass}
               />
-            </Field>
-            <Field label="Pre-education photo taken?">
-              <select
-                value={form.preEducationPhoto ? "yes" : "no"}
-                onChange={(e) => set("preEducationPhoto")(e.target.value === "yes")}
-                className={selectClass}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
             </Field>
             <Field label="Today's Poshan Sudha menu / dish name">
               <input
@@ -371,16 +389,6 @@ export default function WorkerEntry() {
                 <option value="yes">Yes</option>
               </select>
             </Field>
-            <Field label="Poshan Sudha benefit photo taken?">
-              <select
-                value={form.photoBeneficiariesNutrition ? "yes" : "no"}
-                onChange={(e) => set("photoBeneficiariesNutrition")(e.target.value === "yes")}
-                className={selectClass}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </Field>
             <Field label="Remarks">
               <textarea
                 rows={3}
@@ -392,11 +400,16 @@ export default function WorkerEntry() {
           </div>
         )}
 
-        {active === "proof" && (
-          <div className="max-w-md">
-            <PhotoGpsCapture photos={photos} onPhotosChange={setPhotos} onLocationChange={setLocation} />
-          </div>
-        )}
+        {active === "proof" &&
+          form.activityStatus === "present" && (
+            <div className="w-full">
+              <PhotoGpsCapture
+                photos={photos}
+                onPhotosChange={setPhotos}
+                onLocationChange={setLocation}
+              />
+            </div>
+          )}
 
         <div className="flex justify-end gap-3 border-t border-line pt-5">
           <button
@@ -409,11 +422,12 @@ export default function WorkerEntry() {
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !withinWindow}
+            title={!withinWindow ? "Entry allowed only between 9:30 AM - 1:30 PM" : undefined}
             className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
           >
             <Save size={16} />
-            {saving ? "Saving..." : "Save Record"}
+            {saving ? "Saving..." : !withinWindow ? "Closed (9:30-1:30 only)" : "Save Record"}
           </button>
         </div>
       </form>

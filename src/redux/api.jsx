@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Matches icds-backend server.js -> app.use("/api/...") mounts + PORT (default 5000)
-const BASE_URL = 'https://icds-backend-goeh.onrender.com/api';
-// const BASE_URL = 'http://localhost:5000/api';
+// const BASE_URL = 'https://icds-backend-goeh.onrender.com/api';
+const BASE_URL = 'http://localhost:5000/api';
 
 
 function getToken() {
@@ -115,6 +115,18 @@ export const api = createApi({
             query: (data) => ({ url: "/records", method: "POST", body: data }),
             invalidatesTags: ["Records", "Dashboard"],
         }),
+        // Add/replace one or more of the 6 photo slots on an existing (still
+        // "pending") record - send { <fieldName>: { url, latitude, longitude,
+        // capturedAt } } for just the slot(s) you're updating right now, e.g.
+        // { afternoonDishPhoto: { url, latitude, longitude, capturedAt } }.
+        updateRecordPhotos: builder.mutation({
+            query: ({ id, ...photoFields }) => ({
+                url: `/records/${id}/photos`,
+                method: "PATCH",
+                body: photoFields,
+            }),
+            invalidatesTags: ["Records", "Dashboard"],
+        }),
         reviewRecord: builder.mutation({
             query: ({ id, status, remarks }) => ({
                 url: `/records/${id}/review`,
@@ -150,14 +162,58 @@ export const api = createApi({
         }),
 
         // ---------------- DASHBOARD (routes/dashboardRoutes.js) - sector roll-up ----------------
+        // blockCode/sectorCode/awcCode are NEW - backend must accept these as
+        // optional narrowing filters on top of the role-based auto-scope
+        // (a block user is always scoped to their own block; these params let
+        // them additionally narrow to one sector / one AWC within it).
         getDashboard: builder.query({
-            query: (params = {}) => {
+            query: ({
+                level = "sector",
+                districtCode = "",
+                blockCode = "",
+                sectorCode = "",
+                awcCode = "",
+                fromDate = "",
+                toDate = "",
+            } = {}) => {
                 const qs = new URLSearchParams();
-                if (params.fromDate) qs.set("fromDate", params.fromDate);
-                if (params.toDate) qs.set("toDate", params.toDate);
-                const s = qs.toString();
-                return `/dashboard${s ? `?${s}` : ""}`;
+
+                // Dashboard level
+                if (level) {
+                    qs.set("level", level);
+                }
+
+                // Filters
+                if (districtCode) {
+                    qs.set("districtCode", districtCode);
+                }
+
+                if (blockCode) {
+                    qs.set("blockCode", blockCode);
+                }
+
+                if (sectorCode) {
+                    qs.set("sectorCode", sectorCode);
+                }
+
+                if (awcCode) {
+                    qs.set("awcCode", awcCode);
+                }
+
+                // Date filters
+                if (fromDate) {
+                    qs.set("fromDate", fromDate);
+                }
+
+                if (toDate) {
+                    qs.set("toDate", toDate);
+                }
+
+                const queryString = qs.toString();
+
+                return `/dashboard${queryString ? `?${queryString}` : ""}`;
             },
+
             providesTags: ["Dashboard"],
         }),
 
@@ -313,6 +369,7 @@ export const {
 
     useGetRecordsQuery,
     useCreateRecordMutation,
+    useUpdateRecordPhotosMutation,
     useReviewRecordMutation,
 
     useGetMukhyaSevikaEntriesQuery,
