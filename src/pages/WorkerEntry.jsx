@@ -131,16 +131,16 @@ export default function WorkerEntry() {
       };
     }
 
-    if (form.activityStatus === "present") {
-      const missing = PHOTO_SLOTS.filter((slot) => !photoFields[slot.key]);
-      if (missing.length > 0) {
-        setError(
-          `Please capture all required photos first. Missing: ${missing.map((s) => s.label).join(", ")}`
-        );
-        setActive("proof");
-        return;
-      }
-    }
+    // if (form.activityStatus === "present") {
+    //   const missing = PHOTO_SLOTS.filter((slot) => !photoFields[slot.key]);
+    //   if (missing.length > 0) {
+    //     setError(
+    //       `Please capture all required photos first. Missing: ${missing.map((s) => s.label).join(", ")}`
+    //     );
+    //     setActive("proof");
+    //     return;
+    //   }
+    // }
 
     try {
       // POST /api/records - awc role only (enforced server-side)
