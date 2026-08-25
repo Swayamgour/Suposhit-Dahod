@@ -49,12 +49,25 @@ export function AuthProvider({ children }) {
     setState({ token: payload.token, user: payload.user });
   }, []);
 
+  // const logout = useCallback(() => {
+  //   localStorage.removeItem("token");
+  //   localStorage.removeItem("user");
+  //   sessionStorage.removeItem("token");
+  //   sessionStorage.removeItem("user");
+  //   setState({ token: null, user: null });
+  // }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     sessionStorage.removeItem("token");
     sessionStorage.removeItem("user");
+
     setState({ token: null, user: null });
+
+    // Full page refresh
+    window.location.reload();
   }, []);
 
   const value = {
