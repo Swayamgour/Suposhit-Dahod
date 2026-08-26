@@ -9,6 +9,7 @@ import {
   useGetAwcsQuery,
 } from "../redux/api.jsx";
 import { useAuth, ROLE_ORDER, ROLE_LABELS } from "../context/AuthContext.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const inputClass =
   "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -18,6 +19,7 @@ const inputClass =
 // one specific user OR to an entire role+scope group - mirrors
 // icds-backend/controllers/taskController.js createTask exactly.
 export default function TaskForm() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { role: myRole } = useAuth();
   const [error, setError] = useState("");
@@ -58,15 +60,15 @@ export default function TaskForm() {
     e.preventDefault();
     setError("");
     if (!form.title || !form.dueDate) {
-      setError("Title and due date are required.");
+      setError(t("taskForm.errTitleDate"));
       return;
     }
     if (form.mode === "user" && !form.assignedToUser) {
-      setError("Please select a user to assign this task to.");
+      setError(t("taskForm.errSelectUser"));
       return;
     }
     if (form.mode === "group" && !form.assignedToScopeCode) {
-      setError("Please select the scope this task should be assigned to.");
+      setError(t("taskForm.errSelectScope"));
       return;
     }
 
@@ -81,21 +83,21 @@ export default function TaskForm() {
       }).unwrap();
       navigate("/tasks");
     } catch (err) {
-      setError(err?.data?.message || "Could not create the task.");
+      setError(err?.data?.message || t("taskForm.errCreate"));
     }
   }
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-display text-2xl font-extrabold text-ink">New Task</h1>
+        <h1 className="font-display text-2xl font-extrabold text-ink">{t("taskForm.newTask")}</h1>
         <button
           type="button"
           onClick={() => navigate("/tasks")}
           className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
         >
           <List size={16} />
-          List
+          {t("taskForm.list")}
         </button>
       </div>
 
@@ -109,46 +111,46 @@ export default function TaskForm() {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="mb-1.5 block text-sm font-medium text-ink">
-              Title <span className="text-coral">*</span>
+              {t("taskForm.title")} <span className="text-coral">*</span>
             </label>
             <input type="text" required value={form.title} onChange={set("title")} className={inputClass} />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1.5 block text-sm font-medium text-ink">Description</label>
+            <label className="mb-1.5 block text-sm font-medium text-ink">{t("taskForm.description")}</label>
             <textarea rows={3} value={form.description} onChange={set("description")} className={inputClass} />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-ink">
-              Due Date <span className="text-coral">*</span>
+              {t("taskForm.dueDate")} <span className="text-coral">*</span>
             </label>
             <input type="date" required value={form.dueDate} onChange={set("dueDate")} className={inputClass} />
           </div>
         </div>
 
         <fieldset className="rounded-xl border border-line p-5">
-          <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">Assign To</legend>
+          <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">{t("taskForm.assignTo")}</legend>
           <div className="mt-2 flex gap-2">
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, mode: "user" }))}
               className={`rounded-lg px-4 py-2 text-sm font-semibold ${form.mode === "user" ? "bg-primary text-white" : "border border-line text-ink"}`}
             >
-              One user
+              {t("taskForm.oneUser")}
             </button>
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, mode: "group" }))}
               className={`rounded-lg px-4 py-2 text-sm font-semibold ${form.mode === "group" ? "bg-primary text-white" : "border border-line text-ink"}`}
             >
-              Every user of a role, in a scope
+              {t("taskForm.everyUserOfRole")}
             </button>
           </div>
 
           {form.mode === "user" ? (
             <div className="mt-4">
-              <label className="mb-1.5 block text-sm font-medium text-ink">User</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink">{t("taskForm.user")}</label>
               <select value={form.assignedToUser} onChange={set("assignedToUser")} className={inputClass}>
-                <option value="">Select a user</option>
+                <option value="">{t("taskForm.selectUser")}</option>
                 {users.map((u) => (
                   <option key={u._id} value={u._id}>
                     {u.name} - {ROLE_LABELS[u.role]}
@@ -159,7 +161,7 @@ export default function TaskForm() {
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-ink">Role</label>
+                <label className="mb-1.5 block text-sm font-medium text-ink">{t("taskForm.role")}</label>
                 <select
                   value={form.assignedToRole}
                   onChange={(e) => setForm((f) => ({ ...f, assignedToRole: e.target.value, assignedToScopeCode: "" }))}
@@ -173,9 +175,9 @@ export default function TaskForm() {
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-ink">Scope</label>
+                <label className="mb-1.5 block text-sm font-medium text-ink">{t("taskForm.scope")}</label>
                 <select value={form.assignedToScopeCode} onChange={set("assignedToScopeCode")} className={inputClass}>
-                  <option value="">Select scope</option>
+                  <option value="">{t("taskForm.selectScope")}</option>
                   {scopeOptions.map((o) => (
                     <option key={o.code} value={o.code}>
                       {o.name} ({o.code})
@@ -194,7 +196,7 @@ export default function TaskForm() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink hover:bg-bg"
           >
             <X size={16} />
-            Cancel
+            {t("taskForm.cancel")}
           </button>
           <button
             type="submit"
@@ -202,7 +204,7 @@ export default function TaskForm() {
             className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
           >
             <Check size={16} />
-            {saving ? "Creating..." : "Create Task"}
+            {saving ? t("taskForm.creating") : t("taskForm.createTask")}
           </button>
         </div>
       </form>

@@ -1,5 +1,6 @@
 import React from "react";
 import { workerFields } from "../components/data/mockData.js";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const typeStyles = {
   date: "bg-primary-light text-primary-dark",
@@ -12,20 +13,21 @@ const typeStyles = {
 };
 
 export default function Info() {
+  const { t } = useLanguage();
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
-            Schema
+            {t("info.eyebrow")}
           </p>
           <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">
-            Worker Details <span className="text-muted">/ Info</span>
+            {t("info.titleMain")} <span className="text-muted">/ {t("info.titleSub")}</span>
           </h1>
-          <p className="mt-1 text-sm text-muted">Every field captured in a Worker Detail entry, and its rules.</p>
+          <p className="mt-1 text-sm text-muted">{t("info.sub")}</p>
         </div>
         <span className="rounded-full bg-ink px-3.5 py-1.5 text-xs font-bold text-white">
-          {workerFields.length} Fields
+          {workerFields.length} {t("info.fields")}
         </span>
       </div>
 
@@ -35,12 +37,12 @@ export default function Info() {
             <thead>
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
                 <th className="px-4 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Label</th>
-                <th className="px-4 py-3 font-semibold">Code</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold">Required</th>
-                <th className="px-4 py-3 font-semibold">Version</th>
-                <th className="px-4 py-3 font-semibold">Extra details</th>
+                <th className="px-4 py-3 font-semibold">{t("info.col.label")}</th>
+                <th className="px-4 py-3 font-semibold">{t("info.col.code")}</th>
+                <th className="px-4 py-3 font-semibold">{t("info.col.type")}</th>
+                <th className="px-4 py-3 font-semibold">{t("info.col.required")}</th>
+                <th className="px-4 py-3 font-semibold">{t("info.col.version")}</th>
+                <th className="px-4 py-3 font-semibold">{t("info.col.extra")}</th>
               </tr>
             </thead>
             <tbody>
@@ -59,9 +61,9 @@ export default function Info() {
                   </td>
                   <td className="px-4 py-3">
                     {f.required ? (
-                      <span className="font-semibold text-coral">Yes</span>
+                      <span className="font-semibold text-coral">{t("common.yes")}</span>
                     ) : (
-                      <span className="text-muted">No</span>
+                      <span className="text-muted">{t("common.no")}</span>
                     )}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted">{f.version}</td>

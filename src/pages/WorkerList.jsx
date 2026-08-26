@@ -30,8 +30,8 @@ export default function WorkerList() {
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
             {t("list.records") || "Records"}
           </p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">Center Daily Records</h1>
-          <p className="mt-1 text-sm text-muted">{records.length} record(s) in your scope.</p>
+          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("workerList.title")}</h1>
+          <p className="mt-1 text-sm text-muted">{records.length} {t("workerList.countSuffix")}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -39,7 +39,7 @@ export default function WorkerList() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
           >
             <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
-            Refresh
+            {t("workerList.refresh")}
           </button>
           {role === ROLES.AWC && (
             <Link
@@ -47,7 +47,7 @@ export default function WorkerList() {
               className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark"
             >
               <Plus size={16} />
-              New Record
+              {t("workerList.newRecord")}
             </Link>
           )}
         </div>
@@ -55,13 +55,13 @@ export default function WorkerList() {
 
       {error && (
         <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
-          {error?.data?.message || "Could not load records from the server."}
+          {error?.data?.message || t("workerList.loadError")}
         </div>
       )}
 
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-surface p-4 shadow-soft">
         <div className="min-w-[160px] flex-1">
-          <label className="mb-1 block text-xs font-semibold text-muted">From date</label>
+          <label className="mb-1 block text-xs font-semibold text-muted">{t("workerList.fromDate")}</label>
           <input
             type="date"
             value={fromDate}
@@ -70,7 +70,7 @@ export default function WorkerList() {
           />
         </div>
         <div className="min-w-[160px] flex-1">
-          <label className="mb-1 block text-xs font-semibold text-muted">To date</label>
+          <label className="mb-1 block text-xs font-semibold text-muted">{t("workerList.toDate")}</label>
           <input
             type="date"
             value={toDate}
@@ -85,33 +85,33 @@ export default function WorkerList() {
           <table className="data-table w-full text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Date</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Block</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Sector</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">AWC</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Worker</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Center Open</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Registered Children</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Morning Meal Count</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Morning Menu</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Milk Pouch Count</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Afternoon Menu</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Quality</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">image</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Approval</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.date")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.block")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.sector")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.awc")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.worker")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.centerOpen")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.registeredChildren")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.morningMealCount")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.morningMenu")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.milkPouchCount")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.afternoonMenu")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.quality")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.image")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("workerList.col.approval")}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
                   <td colSpan={COLUMN_COUNT} className="px-4 py-8 text-center text-sm text-muted">
-                    Loading records...
+                    {t("workerList.loading")}
                   </td>
                 </tr>
               ) : records.length === 0 ? (
                 <tr>
                   <td colSpan={COLUMN_COUNT} className="px-4 py-8 text-center text-sm text-muted">
-                    No records found in your scope.
+                    {t("workerList.empty")}
                   </td>
                 </tr>
               ) : (
@@ -142,7 +142,7 @@ export default function WorkerList() {
                           r?.photos?.[0]?.url ||
                           "http://localhost:5173/logo.jpg"
                         }
-                        alt="Record proof"
+                        alt={t("workerList.recordProofAlt")}
                         className="h-10 w-10 rounded-lg object-cover"
                       />
                     </td>

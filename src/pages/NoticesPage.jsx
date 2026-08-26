@@ -2,8 +2,10 @@ import React from "react";
 import { Bell, CheckCircle2, Loader2 } from "lucide-react";
 import { useAuth, ROLES } from "../context/AuthContext.jsx";
 import { useGetNoticesQuery, useAcknowledgeNoticeMutation } from "../redux/api.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 export default function NoticesPage() {
+  const { t } = useLanguage();
   const { role, user } = useAuth();
   const { data, isLoading } = useGetNoticesQuery({});
   const [acknowledge, { isLoading: acking }] = useAcknowledgeNoticeMutation();
@@ -14,15 +16,15 @@ export default function NoticesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-ink">Notices</h1>
-        <p className="text-sm text-muted">Auto-issued whenever a monthly performance grade comes out C or D.</p>
+        <h1 className="font-display text-2xl font-bold text-ink">{t("noticesPage.title")}</h1>
+        <p className="text-sm text-muted">{t("noticesPage.sub")}</p>
       </div>
 
       <div className="rounded-2xl border border-line bg-white shadow-soft">
         {isLoading ? (
-          <p className="p-6 text-sm text-muted">Loading...</p>
+          <p className="p-6 text-sm text-muted">{t("noticesPage.loading")}</p>
         ) : notices.length === 0 ? (
-          <p className="p-6 text-sm text-muted">No notices. Good work!</p>
+          <p className="p-6 text-sm text-muted">{t("noticesPage.empty")}</p>
         ) : (
           <ul className="divide-y divide-line">
             {notices.map((n) => (
@@ -43,10 +45,10 @@ export default function NoticesPage() {
                     disabled={acking}
                     className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary-dark disabled:opacity-60"
                   >
-                    {acking ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} Acknowledge
+                    {acking ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />} {t("noticesPage.acknowledge")}
                   </button>
                 ) : n.acknowledged ? (
-                  <span className="text-xs font-medium text-primary-dark">Acknowledged</span>
+                  <span className="text-xs font-medium text-primary-dark">{t("noticesPage.acknowledged")}</span>
                 ) : null}
               </li>
             ))}

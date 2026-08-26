@@ -189,7 +189,7 @@ export default function Login({ onSuccess }) {
                   required
                   value={loginValue}
                   onChange={(e) => setLoginValue(e.target.value)}
-                  placeholder="Email / AWC / Sector / Block / District Code"
+                  placeholder={t("login.identifierPlaceholder")}
                   autoComplete="username"
                   className="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3 text-sm text-ink shadow-soft focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
@@ -197,7 +197,7 @@ export default function Login({ onSuccess }) {
               </div>
 
               <p className="mt-1.5 text-[11px] text-muted">
-                Example: email@domain.com or 24445010101
+                {t("login.identifierExample")}
               </p>
             </div>
 

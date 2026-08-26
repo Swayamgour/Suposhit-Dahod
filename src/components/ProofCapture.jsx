@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { MapPin, Camera, Loader2, CheckCircle2, X } from "lucide-react";
 import { uploadPhotos, captureLocation } from "../utils/apiClient.js";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 // Reusable GPS check-in + photo proof capture, matching the shared
 // `submissionFields` every field-staff model (Record, MukhyaSevikaEntry,
@@ -12,6 +13,7 @@ import { uploadPhotos, captureLocation } from "../utils/apiClient.js";
 // `value` / `onChange` shape:
 //   { checkInLatitude, checkInLongitude, checkInTime, photos: [{url, latitude, longitude, capturedAt}] }
 export default function ProofCapture({ value, onChange }) {
+  const { t } = useLanguage();
   const [locating, setLocating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -67,7 +69,7 @@ export default function ProofCapture({ value, onChange }) {
 
   return (
     <div className="rounded-xl border border-line p-5 space-y-4">
-      <p className="text-sm font-bold uppercase tracking-wider text-muted">GPS Check-in &amp; Photo Proof</p>
+      <p className="text-sm font-bold uppercase tracking-wider text-muted">{t("proofCapture.title")}</p>
 
       {error && (
         <div className="rounded-lg border border-coral/30 bg-coral-light px-3 py-2 text-xs font-semibold text-coral">
@@ -91,7 +93,7 @@ export default function ProofCapture({ value, onChange }) {
           ) : (
             <MapPin size={16} />
           )}
-          {locating ? "Getting location..." : hasLocation ? "Location captured" : "Capture GPS location"}
+          {locating ? t("proofCapture.gettingLocation") : hasLocation ? t("proofCapture.locationCaptured") : t("proofCapture.captureLocation")}
         </button>
 
         {hasLocation && (
@@ -106,7 +108,7 @@ export default function ProofCapture({ value, onChange }) {
           }`}
         >
           {uploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-          {uploading ? "Uploading..." : "Add photo"}
+          {uploading ? t("proofCapture.uploading") : t("proofCapture.addPhoto")}
           <input type="file" accept="image/*" multiple onChange={handleFiles} disabled={uploading} className="hidden" />
         </label>
       </div>
@@ -120,7 +122,7 @@ export default function ProofCapture({ value, onChange }) {
                 type="button"
                 onClick={() => removePhoto(idx)}
                 className="absolute right-1 top-1 rounded-full bg-ink/70 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                title="Remove"
+                title={t("proofCapture.remove")}
               >
                 <X size={12} />
               </button>

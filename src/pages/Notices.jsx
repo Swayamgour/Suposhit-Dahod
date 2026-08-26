@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { Bell, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useGetNoticesQuery, useAcknowledgeNoticeMutation } from "../redux/api.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 // GET /api/notices - auto-scoped (AWC/sector see only their own notices,
 // district/block see everyone's in scope). PATCH /:id/acknowledge only
 // works for the notice's own user server-side (noticeController.js), so we
 // only show the button on a notice that belongs to the logged-in user.
 export default function Notices() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [filter, setFilter] = useState("");
   const { data, isLoading, isFetching, error, refetch } = useGetNoticesQuery({ acknowledged: filter });
@@ -19,7 +21,7 @@ export default function Notices() {
     try {
       await acknowledge(id).unwrap();
     } catch (err) {
-      alert(err?.data?.message || "Could not acknowledge notice.");
+      alert(err?.data?.message || t("notices.ackError"));
     }
   }
 
@@ -27,12 +29,12 @@ export default function Notices() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">Performance</p>
+          <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">{t("notices.eyebrow")}</p>
           <h1 className="mt-1 font-display text-2xl font-extrabold text-ink flex items-center gap-2">
             <Bell className="text-primary" size={24} />
-            Notices
+            {t("notices.title")}
           </h1>
-          <p className="mt-1 text-sm text-muted">{notices.length} notice(s) in your scope.</p>
+          <p className="mt-1 text-sm text-muted">{notices.length} {t("notices.countSuffix")}</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -40,32 +42,32 @@ export default function Notices() {
             onChange={(e) => setFilter(e.target.value)}
             className="rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
-            <option value="">All</option>
-            <option value="false">Unacknowledged</option>
-            <option value="true">Acknowledged</option>
+            <option value="">{t("notices.filterAll")}</option>
+            <option value="false">{t("notices.filterUnacked")}</option>
+            <option value="true">{t("notices.filterAcked")}</option>
           </select>
           <button
             onClick={() => refetch()}
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
           >
             <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
-            Refresh
+            {t("notices.refresh")}
           </button>
         </div>
       </div>
 
       {error && (
         <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
-          {error?.data?.message || "Could not load notices from the server."}
+          {error?.data?.message || t("notices.loadError")}
         </div>
       )}
 
       <div className="space-y-3">
         {isLoading ? (
-          <p className="text-sm text-muted">Loading notices...</p>
+          <p className="text-sm text-muted">{t("notices.loading")}</p>
         ) : notices.length === 0 ? (
           <p className="rounded-2xl border border-line bg-surface p-6 text-center text-sm text-muted shadow-soft">
-            No notices found in your scope.
+            {t("notices.empty")}
           </p>
         ) : (
           notices.map((n) => (
@@ -89,13 +91,13 @@ export default function Notices() {
                   className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-dark disabled:opacity-70"
                 >
                   <CheckCircle2 size={14} />
-                  Acknowledge
+                  {t("notices.acknowledge")}
                 </button>
               )}
               {n.acknowledged && (
                 <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary-dark">
                   <CheckCircle2 size={14} />
-                  Acknowledged
+                  {t("notices.acknowledged")}
                 </span>
               )}
             </div>

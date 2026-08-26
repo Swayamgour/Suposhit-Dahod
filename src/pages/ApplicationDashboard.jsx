@@ -37,17 +37,17 @@ export default function ApplicationDashboard() {
             className="rounded-lg border border-line bg-bg px-3 py-1.5 text-sm text-primary focus:border-primary focus:outline-none"
           >
             <option value="undefined">-- ↑ | ↓ --</option>
-            <option value="ASC">Asc ↑</option>
-            <option value="DESC">Desc ↓</option>
+            <option value="ASC">{t("appdash.asc")}</option>
+            <option value="DESC">{t("appdash.desc")}</option>
           </select>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="rounded-lg border border-line bg-bg px-3 py-1.5 text-sm text-primary focus:border-primary focus:outline-none"
           >
-            <option disabled value="undefined">-- Order by --</option>
-            <option value="id">Created On</option>
-            <option value="modifiedDatetime">Modified On</option>
+            <option disabled value="undefined">{t("appdash.orderBy")}</option>
+            <option value="id">{t("appdash.createdOn")}</option>
+            <option value="modifiedDatetime">{t("appdash.modifiedOn")}</option>
           </select>
           <select
             value={itemsPerPage}
@@ -66,10 +66,10 @@ export default function ApplicationDashboard() {
             onChange={(e) => setPage(Number(e.target.value))}
             className="rounded-lg border border-line bg-bg px-3 py-1.5 text-sm text-primary focus:border-primary focus:outline-none"
           >
-            <option value={1}>Page 1</option>
+            <option value={1}>{t("appdash.page")} 1</option>
           </select>
           <button className="rounded-lg border border-primary text-primary px-3 py-1.5 text-sm font-semibold hover:bg-primary hover:text-white transition-colors">
-            Go
+            {t("appdash.go")}
           </button>
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function ApplicationDashboard() {
                 ) : (
                   <tr>
                     <td colSpan={3} className="px-4 py-8 text-center text-muted text-sm">
-                      No archived applications found.
+                      {t("appdash.noArchived")}
                     </td>
                   </tr>
                 )}

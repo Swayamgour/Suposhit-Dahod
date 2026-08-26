@@ -27,10 +27,10 @@ export default function MukhyaDevikaDetails() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
-            Mukhya Sevika
+            {t("mukhyaDetails.eyebrow")}
           </p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">AWC Visit Entries</h1>
-          <p className="mt-1 text-sm text-muted">{entries.length} visit(s) in your scope.</p>
+          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("mukhyaDetails.title")}</h1>
+          <p className="mt-1 text-sm text-muted">{entries.length} {t("mukhyaDetails.countSuffix")}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -38,7 +38,7 @@ export default function MukhyaDevikaDetails() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
           >
             <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
-            Refresh
+            {t("mukhyaDetails.refresh")}
           </button>
           {role === ROLES.SECTOR && (
             <Link
@@ -46,7 +46,7 @@ export default function MukhyaDevikaDetails() {
               className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark"
             >
               <Plus size={16} />
-              New Visit
+              {t("mukhyaDetails.newVisit")}
             </Link>
           )}
         </div>
@@ -54,13 +54,13 @@ export default function MukhyaDevikaDetails() {
 
       {error && (
         <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
-          {error?.data?.message || "Could not load Mukhya Sevika entries from the server."}
+          {error?.data?.message || t("mukhyaDetails.loadError")}
         </div>
       )}
 
       <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-surface p-4 shadow-soft">
         <div className="min-w-[160px] flex-1">
-          <label className="mb-1 block text-xs font-semibold text-muted">From date</label>
+          <label className="mb-1 block text-xs font-semibold text-muted">{t("mukhyaDetails.fromDate")}</label>
           <input
             type="date"
             value={fromDate}
@@ -69,7 +69,7 @@ export default function MukhyaDevikaDetails() {
           />
         </div>
         <div className="min-w-[160px] flex-1">
-          <label className="mb-1 block text-xs font-semibold text-muted">To date</label>
+          <label className="mb-1 block text-xs font-semibold text-muted">{t("mukhyaDetails.toDate")}</label>
           <input
             type="date"
             value={toDate}
@@ -84,27 +84,27 @@ export default function MukhyaDevikaDetails() {
           <table className="data-table w-full text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Date</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Block</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">AWC</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Mukhya Sevika</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Registered Children</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Arrival Time</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Photos</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Approval</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.date")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.block")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.awc")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.mukhyaSevika")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.registeredChildren")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.arrivalTime")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.photos")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("mukhyaDetails.col.approval")}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted">
-                    Loading entries...
+                    {t("mukhyaDetails.loading")}
                   </td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted">
-                    No visit entries found in your scope.
+                    {t("mukhyaDetails.empty")}
                   </td>
                 </tr>
               ) : (

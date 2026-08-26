@@ -10,6 +10,7 @@ import {
   Cell,
 } from "recharts";
 import { sectorSummary, breakfastMenuChart, noonSnackChart, nutritionMenuChart } from "../components/data/mockData.js";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const palette = ["#0F6E5D", "#1C8A75", "#37A38C", "#5CBBA5", "#F2A93B", "#E2574C"];
 
@@ -32,25 +33,26 @@ const tooltipStyle = {
 };
 
 export default function Charts() {
+  const { t } = useLanguage();
   const openClosedData = [
-    { name: "ખુલ્લા", value: sectorSummary.reduce((s, r) => s + r.open, 0) },
-    { name: "બંધ", value: sectorSummary.reduce((s, r) => s + r.closed, 0) },
+    { name: t("charts.open"), value: sectorSummary.reduce((s, r) => s + r.open, 0) },
+    { name: t("charts.closed"), value: sectorSummary.reduce((s, r) => s + r.closed, 0) },
   ];
 
   return (
     <div className="space-y-6">
       <div>
         <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
-          Insights
+          {t("charts.eyebrow")}
         </p>
-        <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">Worker Details · Quick Charts</h1>
+        <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("charts.title")}</h1>
         <p className="mt-1 text-sm text-muted">
-          A district-wide read of centre status, meals served, and menu variety.
+          {t("charts.sub")}
         </p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <ChartCard title="સેજા મુજબ કુલ કેન્દ્રો (Total Centres by Sector)">
+        <ChartCard title={t("charts.chart1")}>
           <BarChart data={sectorSummary} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#EDE8D8" vertical={false} />
             <XAxis dataKey="sector" tick={{ fontSize: 10, fill: "#5C6C70" }} interval={0} angle={-30} textAnchor="end" height={60} />
@@ -60,7 +62,7 @@ export default function Charts() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="આંગણવાડી કેન્દ્ર ખુલ્લું છે? (Open vs Closed)">
+        <ChartCard title={t("charts.chart2")}>
           <BarChart data={openClosedData} layout="vertical" margin={{ left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#EDE8D8" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 11, fill: "#5C6C70" }} />
@@ -74,7 +76,7 @@ export default function Charts() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="સવારના નાસ્તાનું મેનુ (Breakfast Menu)">
+        <ChartCard title={t("charts.chart3")}>
           <BarChart data={breakfastMenuChart} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#EDE8D8" vertical={false} />
             <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#5C6C70" }} interval={0} angle={-25} textAnchor="end" height={70} />
@@ -88,7 +90,7 @@ export default function Charts() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="બપોરના નાસ્તાનું મેનુ (Noon Snack Menu)">
+        <ChartCard title={t("charts.chart4")}>
           <BarChart data={noonSnackChart} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#EDE8D8" vertical={false} />
             <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#5C6C70" }} interval={0} angle={-25} textAnchor="end" height={80} />
@@ -102,7 +104,7 @@ export default function Charts() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="પોષણ સુધા મેનુ (Nutrition Menu)" height={260}>
+        <ChartCard title={t("charts.chart5")} height={260}>
           <BarChart data={nutritionMenuChart} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#EDE8D8" vertical={false} />
             <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#5C6C70" }} interval={0} angle={-25} textAnchor="end" height={80} />
@@ -112,7 +114,7 @@ export default function Charts() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="સેજા મુજબ નાસ્તો મેળવનાર બાળકો (Children Fed by Sector)">
+        <ChartCard title={t("charts.chart6")}>
           <BarChart data={sectorSummary} margin={{ left: -20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#EDE8D8" vertical={false} />
             <XAxis dataKey="sector" tick={{ fontSize: 10, fill: "#5C6C70" }} interval={0} angle={-30} textAnchor="end" height={60} />

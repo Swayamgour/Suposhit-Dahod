@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FileSpreadsheet, FileText, RefreshCw, MapPin } from "lucide-react";
 import { downloadReport } from "../utils/apiClient.js";
 import { useGetHeatmapDataQuery } from "../redux/api.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 function currentPeriod() {
   const d = new Date();
@@ -19,6 +20,7 @@ const GRADE_STYLES = {
 // auto-scoped, every role can use these (icds-backend routes/reportRoutes.js
 // has no authorize() gate, only the standard protect + scopeFilter).
 export default function Reports() {
+  const { t } = useLanguage();
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [period, setPeriod] = useState(currentPeriod());
@@ -52,9 +54,9 @@ export default function Reports() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">Insights</p>
-        <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">Reports</h1>
-        <p className="mt-1 text-sm text-muted">Export worker records and view AWC performance heatmap for your scope.</p>
+        <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">{t("reports.eyebrow")}</p>
+        <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("reports.title")}</h1>
+        <p className="mt-1 text-sm text-muted">{t("reports.sub")}</p>
       </div>
 
       {error && (
@@ -64,10 +66,10 @@ export default function Reports() {
       )}
 
       <div className="rounded-2xl border border-line bg-surface p-5 shadow-card space-y-4">
-        <h2 className="font-display text-lg font-extrabold text-ink">Export Worker Records</h2>
+        <h2 className="font-display text-lg font-extrabold text-ink">{t("reports.exportTitle")}</h2>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[160px]">
-            <label className="mb-1 block text-xs font-semibold text-muted">From date</label>
+            <label className="mb-1 block text-xs font-semibold text-muted">{t("reports.fromDate")}</label>
             <input
               type="date"
               value={fromDate}
@@ -76,7 +78,7 @@ export default function Reports() {
             />
           </div>
           <div className="min-w-[160px]">
-            <label className="mb-1 block text-xs font-semibold text-muted">To date</label>
+            <label className="mb-1 block text-xs font-semibold text-muted">{t("reports.toDate")}</label>
             <input
               type="date"
               value={toDate}
@@ -90,7 +92,7 @@ export default function Reports() {
             className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
           >
             <FileSpreadsheet size={16} />
-            {downloading === "excel" ? "Preparing..." : "Download Excel"}
+            {downloading === "excel" ? t("reports.preparing") : t("reports.downloadExcel")}
           </button>
           <button
             onClick={() => handleDownload("pdf")}
@@ -98,7 +100,7 @@ export default function Reports() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-bold text-ink shadow-soft hover:bg-bg disabled:opacity-70"
           >
             <FileText size={16} />
-            {downloading === "pdf" ? "Preparing..." : "Download PDF"}
+            {downloading === "pdf" ? t("reports.preparing") : t("reports.downloadPdf")}
           </button>
         </div>
       </div>
@@ -107,7 +109,7 @@ export default function Reports() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-extrabold text-ink flex items-center gap-2">
             <MapPin className="text-primary" size={20} />
-            AWC Performance Heatmap
+            {t("reports.heatmapTitle")}
           </h2>
           <div className="flex gap-2">
             <input
@@ -127,7 +129,7 @@ export default function Reports() {
 
         {loadError && (
           <div className="rounded-lg border border-coral/30 bg-coral-light px-3 py-2 text-xs font-semibold text-coral">
-            {loadError?.data?.message || "Could not load heatmap data."}
+            {loadError?.data?.message || t("reports.heatmapError")}
           </div>
         )}
 
@@ -135,20 +137,20 @@ export default function Reports() {
           <table className="data-table w-full text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">AWC</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Score</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Grade</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Location</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("reports.col.awc")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("reports.col.score")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("reports.col.grade")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("reports.col.location")}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted">Loading...</td>
+                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted">{t("reports.loading")}</td>
                 </tr>
               ) : points.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted">No graded AWCs for this period yet.</td>
+                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted">{t("reports.noData")}</td>
                 </tr>
               ) : (
                 points.map((p) => (

@@ -9,11 +9,11 @@ import PhotoGpsCapture, { PHOTO_SLOTS } from "../components/PhotoGpsCapture.jsx"
 // sectorCode/awcCode/*Name fields are filled in server-side from the logged
 // in AWC user, so the form only needs to send the record's own data.
 const sections = [
-  { id: "general", label: "સામાન્ય વિગત" },
-  { id: "morning", label: "સવારે નાસ્તાની વિગત" },
-  { id: "afternoon", label: "બપોરે નાસ્તાની વિગત" },
-  { id: "extra", label: "પોષણ / પૂર્વ-શિક્ષણ" },
-  { id: "proof", label: "GPS & Photo Proof" },
+  { id: "general", labelKey: "workerEntry.section.general" },
+  { id: "morning", labelKey: "workerEntry.section.morning" },
+  { id: "afternoon", labelKey: "workerEntry.section.afternoon" },
+  { id: "extra", labelKey: "workerEntry.section.extra" },
+  { id: "proof", labelKey: "workerEntry.section.proof" },
 ];
 
 function Field({ label, required, hint, children }) {
@@ -112,7 +112,7 @@ export default function WorkerEntry() {
     e.preventDefault();
     setError("");
     if (!isWithinEntryWindow()) {
-      setError("Entry is only allowed between 9:30 AM and 1:30 PM. Please try again during this window.");
+      setError(t("workerEntry.errWindow"));
       return;
     }
 
@@ -159,7 +159,7 @@ export default function WorkerEntry() {
       await createRecord(payload).unwrap();
       navigate("/workers");
     } catch (err) {
-      setError(err?.data?.message || "Could not save the record.");
+      setError(err?.data?.message || t("workerEntry.errSave"));
     }
   }
 
@@ -170,8 +170,8 @@ export default function WorkerEntry() {
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
             {t("list.records")}
           </p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">Center Daily Record</h1>
-          <p className="mt-1 text-sm text-muted">Submit today's Anganwadi center record (AWC role only).</p>
+          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("workerEntry.title")}</h1>
+          <p className="mt-1 text-sm text-muted">{t("workerEntry.sub")}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -180,7 +180,7 @@ export default function WorkerEntry() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
           >
             <ListIcon size={16} />
-            List
+            {t("workerEntry.list")}
           </button>
         </div>
       </div>
@@ -193,7 +193,7 @@ export default function WorkerEntry() {
 
       {!withinWindow && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-          This form can only be filled between 9:30 AM and 1:30 PM. You can still review it, but Save is disabled right now.
+          {t("workerEntry.windowBanner")}
         </div>
       )}
 
@@ -208,7 +208,7 @@ export default function WorkerEntry() {
               : "text-muted hover:text-ink"
               }`}
           >
-            {s.label}
+            {t(s.labelKey)}
           </button>
         ))}
       </div>
@@ -219,7 +219,7 @@ export default function WorkerEntry() {
             {/* <Field label="Date" required>
               <input type="date" required value={form.date} onChange={set("date")} className={inputClass} />
             </Field> */}
-            <Field label="Registered children (3-6 yrs)" required>
+            <Field label={t("workerEntry.field.registeredChildren")} required>
               <input
                 type="number"
                 min="0"
@@ -229,21 +229,21 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Center open today?">
+            <Field label={t("workerEntry.field.centerOpenToday")}>
               <select
                 value={form.centerOpen ? "yes" : "no"}
                 onChange={(e) => set("centerOpen")(e.target.value === "yes")}
                 className={selectClass}
               >
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
+                <option value="yes">{t("common.yes")}</option>
+                <option value="no">{t("common.no")}</option>
               </select>
             </Field>
-            <Field label="Today's status" hint="Select Meeting or Leave if you are not at the centre today">
+            <Field label={t("workerEntry.field.todaysStatus")} hint={t("workerEntry.field.todaysStatusHint")}>
               <select value={form.activityStatus} onChange={set("activityStatus")} className={selectClass}>
-                <option value="present">Present (normal entry)</option>
-                <option value="meeting">Meeting</option>
-                <option value="leave">Leave</option>
+                <option value="present">{t("workerEntry.status.present")}</option>
+                <option value="meeting">{t("workerEntry.status.meeting")}</option>
+                <option value="leave">{t("workerEntry.status.leave")}</option>
               </select>
             </Field>
           </div>
@@ -251,7 +251,7 @@ export default function WorkerEntry() {
 
         {active === "morning" && (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Children who got morning breakfast">
+            <Field label={t("workerEntry.field.morningMealChildren")}>
               <input
                 type="number"
                 min="0"
@@ -260,16 +260,16 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Today's morning menu / dish name" hint="e.g. બુધવાર: શીરો">
+            <Field label={t("workerEntry.field.morningMenu")} hint={t("workerEntry.field.morningMenuHint")}>
               <input
                 type="text"
                 value={form.morningMenu}
                 onChange={set("morningMenu")}
                 className={inputClass}
-                placeholder="e.g. બુધવાર: શીરો"
+                placeholder={t("workerEntry.field.morningMenuHint")}
               />
             </Field>
-            <Field label="Milk pouch count (Doodh Sanjeevani)">
+            <Field label={t("workerEntry.field.milkPouchCount")}>
               <input
                 type="number"
                 min="0"
@@ -278,14 +278,14 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Milk pouch given? (Doodh Sanjeevani)">
+            <Field label={t("workerEntry.field.milkPouchGiven")}>
               <select
                 value={form.milkPouchGiven ? "yes" : "no"}
                 onChange={(e) => set("milkPouchGiven")(e.target.value === "yes")}
                 className={selectClass}
               >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
+                <option value="no">{t("common.no")}</option>
+                <option value="yes">{t("common.yes")}</option>
               </select>
             </Field>
           </div>
@@ -293,17 +293,17 @@ export default function WorkerEntry() {
 
         {active === "afternoon" && (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Afternoon meal given?">
+            <Field label={t("workerEntry.field.afternoonMealGiven")}>
               <select
                 value={form.afternoonMealGiven ? "yes" : "no"}
                 onChange={(e) => set("afternoonMealGiven")(e.target.value === "yes")}
                 className={selectClass}
               >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
+                <option value="no">{t("common.no")}</option>
+                <option value="yes">{t("common.yes")}</option>
               </select>
             </Field>
-            <Field label="Children who got afternoon meal">
+            <Field label={t("workerEntry.field.afternoonMealChildren")}>
               <input
                 type="number"
                 min="0"
@@ -312,20 +312,20 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Today's afternoon menu / dish name" hint="e.g. બુધવાર: દાળ, ભાત અને શાક">
+            <Field label={t("workerEntry.field.afternoonMenu")} hint={t("workerEntry.field.afternoonMenuHint")}>
               <input
                 type="text"
                 value={form.afternoonMenu}
                 onChange={set("afternoonMenu")}
                 className={inputClass}
-                placeholder="e.g. બુધવાર: દાળ, ભાત અને શાક"
+                placeholder={t("workerEntry.field.afternoonMenuHint")}
               />
             </Field>
-            <Field label="Quality of meal today">
+            <Field label={t("workerEntry.field.qualityOfMeal")}>
               <select value={form.qualityOfMeal} onChange={set("qualityOfMeal")} className={selectClass}>
-                <option value="good">Good</option>
-                <option value="average">Average</option>
-                <option value="bad">Bad</option>
+                <option value="good">{t("workerEntry.quality.good")}</option>
+                <option value="average">{t("workerEntry.quality.average")}</option>
+                <option value="bad">{t("workerEntry.quality.bad")}</option>
               </select>
             </Field>
           </div>
@@ -333,17 +333,17 @@ export default function WorkerEntry() {
 
         {active === "extra" && (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Pre-education conducted?">
+            <Field label={t("workerEntry.field.preEducationConducted")}>
               <select
                 value={form.preEducationConducted ? "yes" : "no"}
                 onChange={(e) => set("preEducationConducted")(e.target.value === "yes")}
                 className={selectClass}
               >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
+                <option value="no">{t("common.no")}</option>
+                <option value="yes">{t("common.yes")}</option>
               </select>
             </Field>
-            <Field label="Children in pre-education">
+            <Field label={t("workerEntry.field.preEducationChildren")}>
               <input
                 type="number"
                 min="0"
@@ -352,7 +352,7 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Today's Poshan Sudha menu / dish name">
+            <Field label={t("workerEntry.field.poshanMenu")}>
               <input
                 type="text"
                 value={form.poshanMenu}
@@ -360,7 +360,7 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Poshan Sudha beneficiary count">
+            <Field label={t("workerEntry.field.poshanSudhaCount")}>
               <input
                 type="number"
                 min="0"
@@ -369,27 +369,27 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Poshan dish given?">
+            <Field label={t("workerEntry.field.poshanDishGiven")}>
               <select
                 value={form.poshanDishGiven ? "yes" : "no"}
                 onChange={(e) => set("poshanDishGiven")(e.target.value === "yes")}
                 className={selectClass}
               >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
+                <option value="no">{t("common.no")}</option>
+                <option value="yes">{t("common.yes")}</option>
               </select>
             </Field>
-            <Field label="Poshan benefit given?">
+            <Field label={t("workerEntry.field.poshanBenefitGiven")}>
               <select
                 value={form.poshanBenefitGiven ? "yes" : "no"}
                 onChange={(e) => set("poshanBenefitGiven")(e.target.value === "yes")}
                 className={selectClass}
               >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
+                <option value="no">{t("common.no")}</option>
+                <option value="yes">{t("common.yes")}</option>
               </select>
             </Field>
-            <Field label="Remarks">
+            <Field label={t("workerEntry.field.remarks")}>
               <textarea
                 rows={3}
                 value={form.remarks}
@@ -418,16 +418,16 @@ export default function WorkerEntry() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink hover:bg-bg"
           >
             <X size={16} />
-            Cancel
+            {t("workerEntry.cancel")}
           </button>
           <button
             type="submit"
             disabled={saving || !withinWindow}
-            title={!withinWindow ? "Entry allowed only between 9:30 AM - 1:30 PM" : undefined}
+            title={!withinWindow ? t("workerEntry.windowTitle") : undefined}
             className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
           >
             <Save size={16} />
-            {saving ? "Saving..." : !withinWindow ? "Closed (9:30-1:30 only)" : "Save Record"}
+            {saving ? t("workerEntry.saving") : !withinWindow ? t("workerEntry.closed") : t("workerEntry.saveRecord")}
           </button>
         </div>
       </form>

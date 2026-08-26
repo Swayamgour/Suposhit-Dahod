@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { RefreshCw, Sparkles, Pencil, Check, X } from "lucide-react";
 import { useGetGradesQuery, useGenerateGradesMutation, useUpdateGradeMutation } from "../redux/api.jsx";
 import { useAuth, ROLES } from "../context/AuthContext.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const GRADE_STYLES = {
   A: "bg-primary-light text-primary-dark",
@@ -19,6 +20,7 @@ function currentPeriod() {
 // POST /api/grades/generate + PATCH /api/grades/:id - district/block/sector
 // only (AWC role cannot generate or edit grades) - mirrors gradeController.js.
 export default function Grades() {
+  const { t } = useLanguage();
   const { role } = useAuth();
   const [period, setPeriod] = useState(currentPeriod());
   const [editingId, setEditingId] = useState(null);
@@ -39,7 +41,7 @@ export default function Grades() {
       await generateGrades(period).unwrap();
       refetch();
     } catch (err) {
-      setError(err?.data?.message || "Could not generate grades.");
+      setError(err?.data?.message || t("grades.generateError"));
     }
   }
 
@@ -60,7 +62,7 @@ export default function Grades() {
       }).unwrap();
       setEditingId(null);
     } catch (err) {
-      alert(err?.data?.message || "Could not update grade.");
+      alert(err?.data?.message || t("grades.updateError"));
     }
   }
 
@@ -68,9 +70,9 @@ export default function Grades() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">Performance</p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">Grades</h1>
-          <p className="mt-1 text-sm text-muted">{grades.length} grade(s) for {period}.</p>
+          <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">{t("grades.eyebrow")}</p>
+          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("grades.title")}</h1>
+          <p className="mt-1 text-sm text-muted">{grades.length} {t("grades.countSuffix")} {period}.</p>
         </div>
         <div className="flex gap-2">
           <input
@@ -84,7 +86,7 @@ export default function Grades() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
           >
             <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
-            Refresh
+            {t("grades.refresh")}
           </button>
           {canManage && (
             <button
@@ -93,7 +95,7 @@ export default function Grades() {
               className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
             >
               <Sparkles size={16} />
-              {generating ? "Generating..." : "Generate Grades"}
+              {generating ? t("grades.generating") : t("grades.generateBtn")}
             </button>
           )}
         </div>
@@ -101,7 +103,7 @@ export default function Grades() {
 
       {(error || loadError) && (
         <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
-          {error || loadError?.data?.message || "Could not load grades from the server."}
+          {error || loadError?.data?.message || t("grades.loadError")}
         </div>
       )}
 
@@ -110,25 +112,25 @@ export default function Grades() {
           <table className="data-table w-full text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Worker</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Punctuality</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Quality</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Beneficiary</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Task Completion</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Supervisor</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Total</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Grade</th>
-                {canManage && <th className="whitespace-nowrap px-4 py-3 font-semibold">Actions</th>}
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.worker")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.punctuality")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.quality")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.beneficiary")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.taskCompletion")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.supervisor")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.total")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.grade")}</th>
+                {canManage && <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("grades.col.actions")}</th>}
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted">Loading grades...</td>
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted">{t("grades.loading")}</td>
                 </tr>
               ) : grades.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted">No grades found for this period.</td>
+                  <td colSpan={9} className="px-4 py-8 text-center text-sm text-muted">{t("grades.empty")}</td>
                 </tr>
               ) : (
                 grades.map((g) => (
@@ -150,7 +152,7 @@ export default function Grades() {
                       </td>
                       {canManage && (
                         <td className="whitespace-nowrap px-4 py-3">
-                          <button onClick={() => startEdit(g)} title="Edit" className="rounded-lg p-1.5 text-primary hover:bg-primary-light">
+                          <button onClick={() => startEdit(g)} title={t("grades.edit")} className="rounded-lg p-1.5 text-primary hover:bg-primary-light">
                             <Pencil size={16} />
                           </button>
                         </td>
@@ -161,7 +163,7 @@ export default function Grades() {
                         <td colSpan={9} className="bg-bg/50 px-4 py-4">
                           <div className="flex flex-wrap items-end gap-4">
                             <div>
-                              <label className="mb-1 block text-xs font-semibold text-muted">Supervisor score (0-100)</label>
+                              <label className="mb-1 block text-xs font-semibold text-muted">{t("grades.supervisorScore")}</label>
                               <input
                                 type="number"
                                 min="0"
@@ -172,7 +174,7 @@ export default function Grades() {
                               />
                             </div>
                             <div className="min-w-[240px] flex-1">
-                              <label className="mb-1 block text-xs font-semibold text-muted">Supervisor remarks</label>
+                              <label className="mb-1 block text-xs font-semibold text-muted">{t("grades.supervisorRemarks")}</label>
                               <input
                                 type="text"
                                 value={editForm.supervisorRemarks}
@@ -186,14 +188,14 @@ export default function Grades() {
                               className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-dark disabled:opacity-70"
                             >
                               <Check size={14} />
-                              Save
+                              {t("grades.save")}
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
                               className="flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-sm font-semibold text-ink hover:bg-bg"
                             >
                               <X size={14} />
-                              Cancel
+                              {t("grades.cancel")}
                             </button>
                           </div>
                         </td>

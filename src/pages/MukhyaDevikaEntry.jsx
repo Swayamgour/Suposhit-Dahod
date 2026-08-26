@@ -41,7 +41,7 @@ export default function MukhyaDevikaEntry() {
     e.preventDefault();
     setError("");
     if (!form.awcCode) {
-      setError("Please select the AWC you visited.");
+      setError(t("mukhya.form.errSelectAwc"));
       return;
     }
     try {
@@ -55,7 +55,7 @@ export default function MukhyaDevikaEntry() {
       }).unwrap();
       navigate("/mukhya-sevika");
     } catch (err) {
-      setError(err?.data?.message || "Could not save the visit entry.");
+      setError(err?.data?.message || t("mukhya.form.errSave"));
     }
   }
 
@@ -72,7 +72,7 @@ export default function MukhyaDevikaEntry() {
           className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
         >
           <List size={16} />
-          List
+          {t("mukhya.form.list")}
         </button>
       </div>
 
@@ -95,7 +95,7 @@ export default function MukhyaDevikaEntry() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-ink">
-                  AWC Center <span className="text-coral">*</span>
+                  {t("mukhya.form.awcCenter")} <span className="text-coral">*</span>
                 </label>
                 <select
                   required
@@ -103,7 +103,7 @@ export default function MukhyaDevikaEntry() {
                   onChange={set("awcCode")}
                   className={inputClass}
                 >
-                  <option value="">{loadingAwcs ? "Loading..." : "Select AWC"}</option>
+                  <option value="">{loadingAwcs ? t("mukhya.form.loading") : t("mukhya.form.selectAwc")}</option>
                   {awcs.map((a) => (
                     <option key={a.code} value={a.code}>
                       {a.name}
@@ -113,12 +113,12 @@ export default function MukhyaDevikaEntry() {
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-ink">
-                  Visit Date <span className="text-coral">*</span>
+                  {t("mukhya.form.visitDate")} <span className="text-coral">*</span>
                 </label>
                 <input type="date" required value={form.date} onChange={set("date")} className={inputClass} />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-ink">Registered children count</label>
+                <label className="mb-1.5 block text-sm font-medium text-ink">{t("mukhya.form.registeredChildrenCount")}</label>
                 <input
                   type="number"
                   min="0"
@@ -128,10 +128,10 @@ export default function MukhyaDevikaEntry() {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-ink">Arrival time</label>
+                <label className="mb-1.5 block text-sm font-medium text-ink">{t("mukhya.form.arrivalTime")}</label>
                 <input
                   type="text"
-                  placeholder="e.g. 10:30 AM"
+                  placeholder={t("mukhya.form.arrivalTimePlaceholder")}
                   value={form.arrivalTime}
                   onChange={set("arrivalTime")}
                   className={inputClass}
@@ -141,11 +141,11 @@ export default function MukhyaDevikaEntry() {
           </fieldset>
 
           <fieldset className="rounded-xl border border-line p-5">
-            <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">Visit Details</legend>
+            <legend className="px-3 text-sm font-bold text-muted uppercase tracking-wider">{t("mukhya.form.visitDetails")}</legend>
             <div className="mt-2 space-y-4">
               <PhotoGpsCapture photos={photos} onPhotosChange={setPhotos} onLocationChange={setLocation} />
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-ink">Remarks</label>
+                <label className="mb-1.5 block text-sm font-medium text-ink">{t("mukhya.form.remarks")}</label>
                 <textarea rows={3} value={form.remarks} onChange={set("remarks")} className={inputClass} />
               </div>
             </div>
@@ -158,7 +158,7 @@ export default function MukhyaDevikaEntry() {
               className="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-2.5 text-sm font-semibold text-ink hover:bg-bg"
             >
               <X size={16} />
-              Cancel
+              {t("mukhya.form.cancel")}
             </button>
             <button
               type="submit"
@@ -166,7 +166,7 @@ export default function MukhyaDevikaEntry() {
               className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
             >
               <Check size={16} />
-              {saving ? "Saving..." : "Save Visit"}
+              {saving ? t("mukhya.form.saving") : t("mukhya.form.saveVisit")}
             </button>
           </div>
         </form>

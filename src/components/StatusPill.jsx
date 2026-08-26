@@ -1,7 +1,9 @@
 import React from "react";
 import { Check, X } from "lucide-react";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 export default function StatusPill({ value }) {
+  const { t } = useLanguage();
   const isYes = value === "હા" || value === true || value === "Yes";
   return (
     <span
@@ -10,7 +12,7 @@ export default function StatusPill({ value }) {
       }`}
     >
       {isYes ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={3} />}
-      {isYes ? "હા" : "ના"}
+      {isYes ? t("common.yes") : t("common.no")}
     </span>
   );
 }

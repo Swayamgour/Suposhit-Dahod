@@ -8,6 +8,7 @@ import {
   useGetAwcsQuery,
 } from "../redux/api.jsx";
 import { useAuth, ROLES, ROLE_LABELS, ROLE_ORDER } from "../context/AuthContext.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const inputClass =
   "w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-3 text-sm text-ink shadow-soft focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -19,6 +20,7 @@ const inputClass =
 // creator's account regardless of what this form sends, so the UI mirrors
 // that by not even asking for them).
 export default function AddUser() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { role: myRole, user: me } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -93,7 +95,7 @@ export default function AddUser() {
       await createUser(formData).unwrap();
       navigate("/applications/users");
     } catch (err) {
-      setError(err?.data?.message || "Could not create the user.");
+      setError(err?.data?.message || t("addUser.errCreate"));
     }
   }
 
@@ -108,7 +110,7 @@ export default function AddUser() {
         </button>
         <h1 className="font-display text-xl font-extrabold text-ink flex items-center gap-2">
           <UserPlus className="text-primary" size={24} />
-          Add Role 
+          {t("addUser.addRole")}
         </h1>
       </div>
 
@@ -120,7 +122,7 @@ export default function AddUser() {
 
       <form onSubmit={handleSubmit} className="rounded-2xl border border-line bg-surface p-6 shadow-card space-y-5">
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Name</label>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">{t("addUser.name")}</label>
           <div className="relative">
             <User size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
             <input
@@ -134,7 +136,7 @@ export default function AddUser() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Email</label>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">{t("addUser.email")}</label>
           <div className="relative">
             <Mail size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
             <input
@@ -148,7 +150,7 @@ export default function AddUser() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Password</label>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">{t("addUser.password")}</label>
           <div className="relative">
             <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
             <input
@@ -170,7 +172,7 @@ export default function AddUser() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">Role</label>
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">{t("addUser.role")}</label>
           <div className="relative">
             <Briefcase size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
             <select
@@ -190,7 +192,7 @@ export default function AddUser() {
         {needsBlock && (
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
-              Block <span className="text-coral">*</span>
+              {t("addUser.block")} <span className="text-coral">*</span>
             </label>
             <select
               required
@@ -198,7 +200,7 @@ export default function AddUser() {
               onChange={(e) => update("blockCode", e.target.value)}
               className="w-full rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink shadow-soft focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              <option value="">Select block</option>
+              <option value="">{t("addUser.selectBlock")}</option>
               {blocks.map((b) => (
                 <option key={b.code} value={b.code}>
                   {b.name}
@@ -211,7 +213,7 @@ export default function AddUser() {
         {needsSector && (
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
-              Sector <span className="text-coral">*</span>
+              {t("addUser.sector")} <span className="text-coral">*</span>
             </label>
             <select
               required
@@ -219,7 +221,7 @@ export default function AddUser() {
               onChange={(e) => update("sectorCode", e.target.value)}
               className="w-full rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink shadow-soft focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              <option value="">Select sector</option>
+              <option value="">{t("addUser.selectSector")}</option>
               {sectors.map((s) => (
                 <option key={s.code} value={s.code}>
                   {s.name}
@@ -232,7 +234,7 @@ export default function AddUser() {
         {needsAwc && (
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
-              AWC <span className="text-coral">*</span>
+              {t("addUser.awc")} <span className="text-coral">*</span>
             </label>
             <select
               required
@@ -240,7 +242,7 @@ export default function AddUser() {
               onChange={(e) => update("awcCode", e.target.value)}
               className="w-full rounded-xl border border-line bg-surface px-3 py-3 text-sm text-ink shadow-soft focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              <option value="">Select AWC</option>
+              <option value="">{t("addUser.selectAwc")}</option>
               {awcs.map((a) => (
                 <option key={a.code} value={a.code}>
                   {a.name}
@@ -255,7 +257,7 @@ export default function AddUser() {
           disabled={loading}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-card transition-all hover:bg-primary-dark active:scale-[0.99] disabled:opacity-70"
         >
-          {loading ? "Creating..." : "Create User"}
+          {loading ? t("addUser.creating") : t("addUser.createUser")}
         </button>
       </form>
     </div>

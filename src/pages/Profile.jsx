@@ -78,18 +78,18 @@ export default function Profile() {
 
             {error && (
                 <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
-                    {error?.data?.message || "Could not load your profile from the server."}
+                    {error?.data?.message || t("profile.loadError")}
                 </div>
             )}
 
             {isLoading ? (
                 <div className="rounded-2xl border border-line bg-surface p-10 text-center text-sm text-muted shadow-card">
-                    Loading profile...
+                    {t("profile.loading")}
                 </div>
             ) : !user ? (
                 !error && (
                     <div className="rounded-2xl border border-line bg-surface p-10 text-center text-sm text-muted shadow-card">
-                        No profile data found.
+                        {t("profile.noData")}
                     </div>
                 )
             ) : (
@@ -124,7 +124,7 @@ export default function Profile() {
                                             }`}
                                     >
                                         {user.isActive ? <BadgeCheck size={12} /> : <BadgeX size={12} />}
-                                        {user.isActive ? "Active" : "Inactive"}
+                                        {user.isActive ? t("profile.active") : t("profile.inactive")}
                                     </span>
                                     <span
                                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${user.status === "accepted"
@@ -147,13 +147,13 @@ export default function Profile() {
                             </h3>
                         </div>
                         <div className="divide-y divide-line">
-                            <InfoRow icon={Mail} label="Email" value={user.email} />
-                            <InfoRow icon={ShieldCheck} label="Role" value={ROLE_LABELS[user.role] || user.role} />
+                            <InfoRow icon={Mail} label={t("profile.labelEmail")} value={user.email} />
+                            <InfoRow icon={ShieldCheck} label={t("profile.labelRole")} value={ROLE_LABELS[user.role] || user.role} />
                             {scope && (
-                                <InfoRow icon={MapPin} label="Scope" value={scope} valueClass="font-mono" />
+                                <InfoRow icon={MapPin} label={t("profile.labelScope")} value={scope} valueClass="font-mono" />
                             )}
-                            <InfoRow icon={CalendarDays} label="Member since" value={formatDate(user.createdAt)} />
-                            <InfoRow icon={CalendarDays} label="Last updated" value={formatDate(user.updatedAt)} />
+                            <InfoRow icon={CalendarDays} label={t("profile.labelMemberSince")} value={formatDate(user.createdAt)} />
+                            <InfoRow icon={CalendarDays} label={t("profile.labelLastUpdated")} value={formatDate(user.updatedAt)} />
                         </div>
                     </div>
                 </>

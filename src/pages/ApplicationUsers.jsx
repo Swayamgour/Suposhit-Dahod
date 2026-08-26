@@ -12,13 +12,13 @@ import { useAuth, ROLES, ROLE_LABELS, ROLE_ORDER, outranks } from "../context/Au
 // Small enable/disable toggle switch.
 // checked = true  -> status "accepted" (enabled)
 // checked = false -> status "rejected" (disabled)
-function StatusToggle({ checked, onChange, disabled }) {
+function StatusToggle({ checked, onChange, disabled, t }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      title={checked ? "Enabled (click to disable)" : "Disabled (click to enable)"}
+      title={checked ? t("appusers.enabledTitle") : t("appusers.disabledTitle")}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? "bg-primary" : "bg-coral/40"
@@ -57,18 +57,18 @@ export default function ApplicationUsersAwc() {
     try {
       await updateStatus({ id, status }).unwrap();
     } catch (err) {
-      alert(err?.data?.message || "Could not update status.");
+      alert(err?.data?.message || t("appusers.errUpdateStatus"));
     } finally {
       setTogglingId(null);
     }
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Delete this user?")) return;
+    if (!window.confirm(t("appusers.confirmDelete"))) return;
     try {
       await deleteUser(id).unwrap();
     } catch (err) {
-      alert(err?.data?.message || "Could not delete user.");
+      alert(err?.data?.message || t("appusers.errDelete"));
     }
   }
 
@@ -85,7 +85,7 @@ export default function ApplicationUsersAwc() {
             className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-soft hover:bg-bg"
           >
             <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
-            Refresh
+            {t("appusers.refresh")}
           </button>
           {myRole !== ROLES.AWC && (
             <Link
@@ -93,7 +93,7 @@ export default function ApplicationUsersAwc() {
               className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark"
             >
               <UserPlus size={16} />
-              Add User
+              {t("appusers.addUser")}
             </Link>
           )}
         </div>
@@ -101,7 +101,7 @@ export default function ApplicationUsersAwc() {
 
       {error && (
         <div className="rounded-2xl border border-coral/30 bg-coral-light px-4 py-3 text-sm font-semibold text-coral">
-          {error?.data?.message || "Could not load users from the server."}
+          {error?.data?.message || t("appusers.loadError")}
         </div>
       )}
 
@@ -125,7 +125,7 @@ export default function ApplicationUsersAwc() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              <option value="">All roles</option>
+              <option value="">{t("appusers.allRoles")}</option>
               {Object.values(ROLES).map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABELS[r]}
@@ -137,9 +137,9 @@ export default function ApplicationUsersAwc() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              <option value="">All statuses</option>
-              <option value="accepted">Accepted</option>
-              <option value="rejected">Rejected</option>
+              <option value="">{t("appusers.allStatuses")}</option>
+              <option value="accepted">{t("appusers.accepted")}</option>
+              <option value="rejected">{t("appusers.rejected")}</option>
             </select>
           </div>
         </div>
@@ -148,25 +148,25 @@ export default function ApplicationUsersAwc() {
           <table className="data-table w-full text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Name</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Email</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Role</th>
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">Scope</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.name")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.email")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.role")}</th>
+                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.scope")}</th>
                 {/* <th className="whitespace-nowrap px-4 py-3 font-semibold">Status</th> */}
-                {myRole !== ROLES.AWC && <th className="whitespace-nowrap px-4 py-3 font-semibold">Actions</th>}
+                {myRole !== ROLES.AWC && <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.actions")}</th>}
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted">
-                    Loading users...
+                    {t("appusers.loading")}
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted">
-                    No users found in your scope.
+                    {t("appusers.empty")}
                   </td>
                 </tr>
               ) : (
@@ -194,6 +194,7 @@ export default function ApplicationUsersAwc() {
                           <StatusToggle
                             checked={u.status === "accepted"}
                             disabled={togglingId === u._id}
+                            t={t}
                             onChange={(nextChecked) =>
                               handleStatus(u._id, nextChecked ? "accepted" : "rejected")
                             }
@@ -201,7 +202,7 @@ export default function ApplicationUsersAwc() {
                           {outranks(myRole, u.role) && (
                             <button
                               onClick={() => handleDelete(u._id)}
-                              title="Delete"
+                              title={t("appusers.delete")}
                               className="rounded-lg p-1.5 text-coral hover:bg-coral-light"
                             >
                               <Trash2 size={16} />

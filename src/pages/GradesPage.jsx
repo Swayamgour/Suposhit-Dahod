@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Loader2, RefreshCw, Award, X } from "lucide-react";
 import { useAuth, ROLES } from "../context/AuthContext.jsx";
 import { useGetGradesQuery, useGenerateGradesMutation, useUpdateGradeMutation } from "../redux/api.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const GRADE_STYLES = {
   A: "bg-primary-light text-primary-dark",
@@ -15,7 +16,16 @@ const currentPeriod = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
 
+const SCORE_FIELD_KEYS = {
+  punctualityScore: "gradesPage.field.punctuality",
+  submissionQualityScore: "gradesPage.field.submissionQuality",
+  beneficiaryRatioScore: "gradesPage.field.beneficiaryRatio",
+  taskCompletionScore: "gradesPage.field.taskCompletion",
+  supervisorRemarksScore: "gradesPage.field.supervisorRemarksScore",
+};
+
 function EditGradeModal({ grade, onClose }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     punctualityScore: grade.punctualityScore,
     submissionQualityScore: grade.submissionQualityScore,
@@ -38,22 +48,22 @@ function EditGradeModal({ grade, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-soft">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-ink">Adjust Grade</h3>
+          <h3 className="text-lg font-bold text-ink">{t("gradesPage.adjustGrade")}</h3>
           <button onClick={onClose}><X size={18} /></button>
         </div>
         <form onSubmit={submit} className="space-y-3">
           {["punctualityScore", "submissionQualityScore", "beneficiaryRatioScore", "taskCompletionScore", "supervisorRemarksScore"].map((f) => (
             <label key={f} className="block text-xs font-medium text-muted">
-              {f.replace(/Score$/, "").replace(/([A-Z])/g, " $1")}
+              {t(SCORE_FIELD_KEYS[f])}
               <input type="number" min={0} max={100} value={form[f]} onChange={set(f)} className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm" />
             </label>
           ))}
           <label className="block text-xs font-medium text-muted">
-            Supervisor remarks
+            {t("gradesPage.supervisorRemarks")}
             <textarea value={form.supervisorRemarks} onChange={set("supervisorRemarks")} className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm" rows={2} />
           </label>
           <button disabled={isLoading} className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-            {isLoading ? <Loader2 className="mx-auto animate-spin" size={16} /> : "Save"}
+            {isLoading ? <Loader2 className="mx-auto animate-spin" size={16} /> : t("gradesPage.save")}
           </button>
         </form>
       </div>
@@ -62,6 +72,7 @@ function EditGradeModal({ grade, onClose }) {
 }
 
 export default function GradesPage() {
+  const { t } = useLanguage();
   const { role } = useAuth();
   const [period, setPeriod] = useState(currentPeriod());
   const [editGrade, setEditGrade] = useState(null);
@@ -75,8 +86,8 @@ export default function GradesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold text-ink">Performance Grading</h1>
-          <p className="text-sm text-muted">Auto-computed from punctuality, submission quality, beneficiary ratio, and task completion.</p>
+          <h1 className="font-display text-2xl font-bold text-ink">{t("gradesPage.title")}</h1>
+          <p className="text-sm text-muted">{t("gradesPage.sub")}</p>
         </div>
         <div className="flex items-center gap-2">
           <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="rounded-lg border border-line px-3 py-2 text-sm" />
@@ -87,7 +98,7 @@ export default function GradesPage() {
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             >
               {generating ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-              Generate / Refresh
+              {t("gradesPage.generate")}
             </button>
           )}
         </div>
@@ -95,21 +106,21 @@ export default function GradesPage() {
 
       <div className="rounded-2xl border border-line bg-white shadow-soft">
         {isLoading ? (
-          <p className="p-6 text-sm text-muted">Loading...</p>
+          <p className="p-6 text-sm text-muted">{t("gradesPage.loading")}</p>
         ) : grades.length === 0 ? (
-          <p className="p-6 text-sm text-muted">No grades for {period} yet. {canManage && "Click Generate to compute them."}</p>
+          <p className="p-6 text-sm text-muted">{t("gradesPage.noneFor")} {period} {t("gradesPage.yet")} {canManage && t("gradesPage.clickGenerate")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-surface text-xs uppercase text-muted">
                 <tr>
-                  <th className="p-3">Worker</th>
-                  <th className="p-3">Punctuality</th>
-                  <th className="p-3">Quality</th>
-                  <th className="p-3">Beneficiary</th>
-                  <th className="p-3">Tasks</th>
-                  <th className="p-3">Total</th>
-                  <th className="p-3">Grade</th>
+                  <th className="p-3">{t("gradesPage.col.worker")}</th>
+                  <th className="p-3">{t("gradesPage.col.punctuality")}</th>
+                  <th className="p-3">{t("gradesPage.col.quality")}</th>
+                  <th className="p-3">{t("gradesPage.col.beneficiary")}</th>
+                  <th className="p-3">{t("gradesPage.col.tasks")}</th>
+                  <th className="p-3">{t("gradesPage.col.total")}</th>
+                  <th className="p-3">{t("gradesPage.col.grade")}</th>
                   {canManage && <th className="p-3"></th>}
                 </tr>
               </thead>
@@ -130,7 +141,7 @@ export default function GradesPage() {
                     {canManage && (
                       <td className="p-3">
                         <button onClick={() => setEditGrade(g)} className="text-xs font-semibold text-primary-dark hover:underline">
-                          Adjust
+                          {t("gradesPage.adjust")}
                         </button>
                       </td>
                     )}

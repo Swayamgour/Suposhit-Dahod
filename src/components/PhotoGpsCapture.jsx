@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { useUploadPhotosMutation } from "../redux/api.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 /*
 |--------------------------------------------------------------------------
@@ -35,31 +36,43 @@ export const PHOTO_SLOTS = [
     key: "morningDishPhoto",
     label: "Morning dish photo",
     description: "Today's morning meal / dish",
+    labelKey: "photoGps.slot.morningDishPhoto.label",
+    descKey: "photoGps.slot.morningDishPhoto.desc",
   },
   {
     key: "childrenEatingBreakfastPhoto",
     label: "Children eating morning meal",
     description: "Children having morning breakfast",
+    labelKey: "photoGps.slot.childrenEatingBreakfastPhoto.label",
+    descKey: "photoGps.slot.childrenEatingBreakfastPhoto.desc",
   },
   {
     key: "afternoonDishPhoto",
     label: "Afternoon dish photo",
     description: "Today's afternoon meal / dish",
+    labelKey: "photoGps.slot.afternoonDishPhoto.label",
+    descKey: "photoGps.slot.afternoonDishPhoto.desc",
   },
   {
     key: "childrenEatingAfternoonPhoto",
     label: "Children eating afternoon meal",
     description: "Children having afternoon meal",
+    labelKey: "photoGps.slot.childrenEatingAfternoonPhoto.label",
+    descKey: "photoGps.slot.childrenEatingAfternoonPhoto.desc",
   },
   {
     key: "preEducationPhoto",
     label: "Pre-education photo",
     description: "Pre-primary education activity",
+    labelKey: "photoGps.slot.preEducationPhoto.label",
+    descKey: "photoGps.slot.preEducationPhoto.desc",
   },
   {
     key: "photoBeneficiariesNutrition",
     label: "Poshan Sudha beneficiary photo",
     description: "Poshan Sudha beneficiaries",
+    labelKey: "photoGps.slot.photoBeneficiariesNutrition.label",
+    descKey: "photoGps.slot.photoBeneficiariesNutrition.desc",
   },
 ];
 
@@ -96,6 +109,7 @@ export default function PhotoGpsCapture({
   photos = [],
   disabled = false,
 }) {
+  const { t } = useLanguage();
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -186,7 +200,7 @@ export default function PhotoGpsCapture({
       } catch (error) {
         console.error("Video play error:", error);
         setCameraError(
-          "Camera started but preview could not be displayed."
+          t("photoGps.errPreview")
         );
       }
     };
@@ -232,7 +246,7 @@ export default function PhotoGpsCapture({
         currentLocation.longitude == null
       ) {
         throw new Error(
-          "Valid GPS location is required before taking a photo."
+          t("photoGps.errGpsRequired")
         );
       }
 
@@ -241,7 +255,7 @@ export default function PhotoGpsCapture({
       // ------------------------------------
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error(
-          "Camera is not supported by this browser. Please use Chrome or another supported browser."
+          t("photoGps.errCameraUnsupported")
         );
       }
 
@@ -274,23 +288,23 @@ export default function PhotoGpsCapture({
     } catch (error) {
       console.error("Camera open error:", error);
 
-      let message = "Unable to open camera.";
+      let message = t("photoGps.errUnableOpenCamera");
 
       if (error?.name === "NotAllowedError") {
         message =
-          "Camera permission is denied. Please allow camera permission from browser settings.";
+          t("photoGps.errPermissionDenied");
       } else if (error?.name === "NotFoundError") {
         message =
-          "No camera was found on this device.";
+          t("photoGps.errNoCameraFound");
       } else if (error?.name === "NotReadableError") {
         message =
-          "Camera is already being used by another application.";
+          t("photoGps.errCameraInUse");
       } else if (error?.name === "SecurityError") {
         message =
-          "Camera is blocked because this page is not using a secure connection.";
+          t("photoGps.errCameraBlocked");
       } else if (error?.name === "OverconstrainedError") {
         message =
-          "Requested camera is not available. Trying default camera.";
+          t("photoGps.errOverconstrained");
       } else if (error?.message) {
         message = error.message;
       }
@@ -334,7 +348,7 @@ export default function PhotoGpsCapture({
       (resolve, reject) => {
         if (!navigator.geolocation) {
           const error =
-            "GPS is not available on this device/browser.";
+            t("photoGps.errGpsUnavailable");
 
           setLocError(error);
           reject(new Error(error));
@@ -382,21 +396,21 @@ export default function PhotoGpsCapture({
 
           (error) => {
             let message =
-              "Could not get current GPS location.";
+              t("photoGps.errGetLocation");
 
             if (error?.code === 1) {
               message =
-                "Location permission denied. Please allow location access.";
+                t("photoGps.errLocationDenied");
             }
 
             if (error?.code === 2) {
               message =
-                "Current location is unavailable.";
+                t("photoGps.errLocationUnavailable");
             }
 
             if (error?.code === 3) {
               message =
-                "Location request timed out. Please try again.";
+                t("photoGps.errLocationTimeout");
             }
 
             setLocError(message);
@@ -442,7 +456,7 @@ export default function PhotoGpsCapture({
             if (!blob) {
               reject(
                 new Error(
-                  "Could not create image file."
+                  t("photoGps.errCreateImage")
                 )
               );
               return;
@@ -500,7 +514,7 @@ export default function PhotoGpsCapture({
         !video.videoHeight
       ) {
         throw new Error(
-          "Camera is not ready yet. Please wait a moment and try again."
+          t("photoGps.errCameraNotReady")
         );
       }
 
@@ -533,7 +547,7 @@ export default function PhotoGpsCapture({
 
       if (!context) {
         throw new Error(
-          "Could not process camera image."
+          t("photoGps.errProcessImage")
         );
       }
 
@@ -597,7 +611,7 @@ export default function PhotoGpsCapture({
         uploadedFiles.length === 0
       ) {
         throw new Error(
-          "Photo upload failed. Server did not return an image URL."
+          t("photoGps.errUploadFailed")
         );
       }
 
@@ -606,7 +620,7 @@ export default function PhotoGpsCapture({
 
       if (!uploaded?.url) {
         throw new Error(
-          "Photo uploaded but image URL was not returned."
+          t("photoGps.errNoUrl")
         );
       }
 
@@ -671,7 +685,7 @@ export default function PhotoGpsCapture({
       setUploadError(
         error?.data?.message ||
         error?.message ||
-        "Could not upload photo. Please try again."
+        t("photoGps.errUploadRetry")
       );
     } finally {
       setCapturing(false);
@@ -754,15 +768,13 @@ export default function PhotoGpsCapture({
             />
 
             <h3 className="text-base font-bold text-ink">
-              Camera & GPS Proof
+              {t("photoGps.headerTitle")}
             </h3>
 
           </div>
 
           <p className="mt-1 text-xs text-muted">
-            Take every required photo directly
-            from the camera. Image selection from
-            gallery is disabled.
+            {t("photoGps.headerDesc")}
           </p>
 
         </div>
@@ -771,7 +783,7 @@ export default function PhotoGpsCapture({
 
           <p className="text-xs font-bold text-primary-dark">
             {capturedCount} /{" "}
-            {totalPhotos} Photos
+            {totalPhotos} {t("photoGps.photosLabel")}
           </p>
 
         </div>
@@ -800,26 +812,25 @@ export default function PhotoGpsCapture({
             <div>
 
               <p className="text-sm font-bold text-ink">
-                GPS Location
+                {t("photoGps.gpsLocation")}
               </p>
 
               {!location ? (
                 <p className="mt-0.5 text-xs text-muted">
-                  GPS will automatically be
-                  captured before opening camera.
+                  {t("photoGps.gpsAutoCapture")}
                 </p>
               ) : (
                 <div className="mt-1 space-y-0.5 text-xs text-primary-dark">
 
                   <p>
-                    Latitude:{" "}
+                    {t("photoGps.latitude")}:{" "}
                     {location.latitude.toFixed(
                       6
                     )}
                   </p>
 
                   <p>
-                    Longitude:{" "}
+                    {t("photoGps.longitude")}:{" "}
                     {location.longitude.toFixed(
                       6
                     )}
@@ -827,11 +838,11 @@ export default function PhotoGpsCapture({
 
                   {location.accuracy ? (
                     <p>
-                      Accuracy:{" "}
+                      {t("photoGps.accuracy")}:{" "}
                       {Math.round(
                         location.accuracy
                       )}{" "}
-                      meters
+                      {t("photoGps.meters")}
                     </p>
                   ) : null}
 
@@ -865,8 +876,8 @@ export default function PhotoGpsCapture({
             )}
 
             {location
-              ? "Recapture GPS"
-              : "Get GPS"}
+              ? t("photoGps.recaptureGps")
+              : t("photoGps.getGps")}
 
           </button>
 
@@ -904,7 +915,7 @@ export default function PhotoGpsCapture({
           <div>
 
             <p className="text-sm font-bold text-coral">
-              Photo upload failed
+              {t("photoGps.uploadFailedTitle")}
             </p>
 
             <p className="mt-0.5 text-xs text-coral">
@@ -958,26 +969,26 @@ export default function PhotoGpsCapture({
                       )}
 
                       <p className="text-sm font-bold text-ink">
-                        {slot.label}
+                        {t(slot.labelKey)}
                       </p>
 
                     </div>
 
                     <p className="mt-1 text-xs text-muted">
-                      {slot.description}
+                      {t(slot.descKey)}
                     </p>
 
                   </div>
 
                   {!photo && (
                     <span className="shrink-0 rounded-full bg-coral-light px-2 py-1 text-[10px] font-bold text-coral">
-                      Required
+                      {t("photoGps.required")}
                     </span>
                   )}
 
                   {photo && (
                     <span className="shrink-0 rounded-full bg-green-50 px-2 py-1 text-[10px] font-bold text-green-700">
-                      Captured
+                      {t("photoGps.captured")}
                     </span>
                   )}
 
@@ -990,7 +1001,7 @@ export default function PhotoGpsCapture({
 
                     <img
                       src={photo.url}
-                      alt={slot.label}
+                      alt={t(slot.labelKey)}
                       className="h-52 w-full object-cover"
                     />
 
@@ -1034,7 +1045,7 @@ export default function PhotoGpsCapture({
                       </div>
 
                       <p className="mt-3 text-xs font-semibold text-muted">
-                        No photo captured
+                        {t("photoGps.noPhotoCaptured")}
                       </p>
 
                     </div>
@@ -1072,7 +1083,7 @@ export default function PhotoGpsCapture({
                             className="animate-spin"
                           />
 
-                          Getting GPS...
+                          {t("photoGps.gettingGps")}
                         </>
                       ) : uploading &&
                         activeSlot?.key ===
@@ -1083,7 +1094,7 @@ export default function PhotoGpsCapture({
                             className="animate-spin"
                           />
 
-                          Uploading...
+                          {t("photoGps.uploading")}
                         </>
                       ) : photo ? (
                         <>
@@ -1091,7 +1102,7 @@ export default function PhotoGpsCapture({
                             size={15}
                           />
 
-                          Retake Photo
+                          {t("photoGps.retakePhoto")}
                         </>
                       ) : (
                         <>
@@ -1099,7 +1110,7 @@ export default function PhotoGpsCapture({
                             size={15}
                           />
 
-                          Open Camera
+                          {t("photoGps.openCamera")}
                         </>
                       )}
 
@@ -1118,7 +1129,7 @@ export default function PhotoGpsCapture({
                           uploading
                         }
                         className="inline-flex items-center justify-center rounded-lg border border-line px-3 py-2.5 text-coral transition hover:bg-coral-light disabled:opacity-50"
-                        title="Remove photo"
+                        title={t("photoGps.removePhoto")}
                       >
                         <X
                           size={16}
@@ -1160,14 +1171,13 @@ export default function PhotoGpsCapture({
                   />
 
                   <p className="text-sm font-bold text-ink">
-                    {activeSlot?.label}
+                    {activeSlot ? t(activeSlot.labelKey) : ""}
                   </p>
 
                 </div>
 
                 <p className="mt-0.5 text-xs text-muted">
-                  Camera is active. Take the photo
-                  from the camera only.
+                  {t("photoGps.cameraActiveDesc")}
                 </p>
 
               </div>
@@ -1179,7 +1189,7 @@ export default function PhotoGpsCapture({
                 }
                 disabled={capturing}
                 className="rounded-lg p-2 text-muted transition hover:bg-bg disabled:opacity-50"
-                title="Close camera"
+                title={t("photoGps.closeCamera")}
               >
                 <X size={20} />
               </button>
@@ -1208,7 +1218,7 @@ export default function PhotoGpsCapture({
                   />
 
                   <span>
-                    GPS{" "}
+                    {t("photoGps.gps")}{" "}
                     {location.latitude.toFixed(
                       5
                     )}
@@ -1234,7 +1244,7 @@ export default function PhotoGpsCapture({
                     />
 
                     <p className="mt-2 text-sm font-semibold">
-                      Opening camera...
+                      {t("photoGps.openingCamera")}
                     </p>
 
                   </div>
@@ -1274,18 +1284,18 @@ export default function PhotoGpsCapture({
                 {location ? (
                   <>
                     <span className="font-semibold text-ink">
-                      GPS locked
+                      {t("photoGps.gpsLocked")}
                     </span>
                     {" • "}
-                    Accuracy{" "}
+                    {t("photoGps.accuracy")}{" "}
                     {Math.round(
                       location.accuracy ||
                       0
                     )}
-                    m
+                    {t("photoGps.metersShort")}
                   </>
                 ) : (
-                  "GPS not available"
+                  t("photoGps.gpsNotAvailable")
                 )}
 
               </div>
@@ -1303,7 +1313,7 @@ export default function PhotoGpsCapture({
 
                   <X size={16} />
 
-                  Cancel
+                  {t("photoGps.cancel")}
 
                 </button>
 
@@ -1329,8 +1339,8 @@ export default function PhotoGpsCapture({
                       />
 
                       {uploading
-                        ? "Uploading..."
-                        : "Capturing..."}
+                        ? t("photoGps.uploading")
+                        : t("photoGps.capturing")}
                     </>
                   ) : (
                     <>
@@ -1338,7 +1348,7 @@ export default function PhotoGpsCapture({
                         size={17}
                       />
 
-                      Capture
+                      {t("photoGps.capture")}
                     </>
                   )}
 
@@ -1389,8 +1399,8 @@ export default function PhotoGpsCapture({
           >
             {capturedCount ===
               totalPhotos
-              ? "All required photos captured successfully."
-              : `${totalPhotos - capturedCount} photo(s) remaining.`}
+              ? t("photoGps.allCaptured")
+              : `${totalPhotos - capturedCount} ${t("photoGps.photosRemaining")}`}
           </p>
 
         </div>
@@ -1398,8 +1408,7 @@ export default function PhotoGpsCapture({
         {capturedCount !==
           totalPhotos && (
             <p className="mt-1 text-xs text-amber-700">
-              Every photo is required when
-              today's status is Present.
+              {t("photoGps.requiredWhenPresent")}
             </p>
           )}
 
