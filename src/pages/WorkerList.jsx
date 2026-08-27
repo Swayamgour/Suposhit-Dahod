@@ -17,7 +17,9 @@ const STATUS_OPTIONS = ["pending", "approved", "rejected"];
 
 // Full-screen viewer for a single record photo, with the record's context
 // shown alongside it (who/where/when + the same meal/quality data as the row).
-function PhotoDetailModal({ record, photoIndex, onClose, t }) {
+// Takes the exact photo object + its label (photo "type") directly, since
+// photos now live on named fields (morningDishPhoto, etc.) rather than an array.
+function PhotoDetailModal({ record, photo, photoLabel, onClose, t }) {
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === "Escape") onClose();
@@ -28,7 +30,6 @@ function PhotoDetailModal({ record, photoIndex, onClose, t }) {
 
   if (!record) return null;
 
-  const photo = record?.photos?.[photoIndex];
   const src = photo?.url || "/logo.jpg";
 
   return (
@@ -44,7 +45,7 @@ function PhotoDetailModal({ record, photoIndex, onClose, t }) {
         <div className="flex flex-1 items-center justify-center bg-black/90 p-2 md:p-4">
           <img
             src={src}
-            alt={`Record photo ${photoIndex + 1}`}
+            alt={photoLabel || "Record photo"}
             className="max-h-[75vh] w-auto max-w-full rounded-lg object-contain"
             onError={(e) => {
               e.currentTarget.src = "/logo.jpg";
@@ -68,6 +69,11 @@ function PhotoDetailModal({ record, photoIndex, onClose, t }) {
           </div>
 
           <div className="space-y-3 text-sm">
+            {/* PHOTO TYPE */}
+            <div className="inline-flex items-center rounded-full bg-primary-light/50 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
+              {photoLabel || "Photo"}
+            </div>
+
             <div className="flex items-center gap-2 text-ink">
               <Calendar size={15} className="text-muted" />
               <span>{new Date(record.date).toLocaleDateString("en-IN")}</span>
@@ -126,10 +132,6 @@ function PhotoDetailModal({ record, photoIndex, onClose, t }) {
               <dt className="text-muted">{t?.("workerList.col.approval") || "Status"}</dt>
               <dd className="text-right capitalize text-ink">{record.status || "-"}</dd>
             </dl>
-
-            <div className="pt-1 text-xs text-muted">
-              {t?.("workerList.photoOf") || "Photo"} {photoIndex + 1} / {record?.photos?.length || 0}
-            </div>
           </div>
         </div>
       </div>
@@ -157,8 +159,8 @@ export default function WorkerList() {
   const [reviewRecord, { isLoading: reviewing }] = useReviewRecordMutation();
   const allRecords = data?.records || [];
 
-  // Full-screen photo viewer state: which record + which photo index is open
-  const [activePhoto, setActivePhoto] = useState(null); // { record, photoIndex }
+  // Full-screen photo viewer state: exact record + photo object + its label ("type")
+  const [activePhoto, setActivePhoto] = useState(null); // { record, photo, photoKey, photoLabel }
 
   const records = useMemo(() => {
     const norm = (v) => (v ?? "").toString().trim().toLowerCase();
@@ -186,9 +188,34 @@ export default function WorkerList() {
     setCenterOpenFilter("");
   };
 
-  // const COLUMN_COUNT = 13;
-  const MAX_PHOTOS = 6;
-  const COLUMN_COUNT = 19;
+  const PHOTO_COLUMNS = [
+    {
+      key: "morningDishPhoto",
+      label: "Morning Breakfast",
+    },
+    {
+      key: "childrenEatingBreakfastPhoto",
+      label: "Children Eating Breakfast",
+    },
+    {
+      key: "afternoonDishPhoto",
+      label: "Afternoon Meal",
+    },
+    {
+      key: "childrenEatingAfternoonPhoto",
+      label: "Children Eating Afternoon",
+    },
+    {
+      key: "preEducationPhoto",
+      label: "Pre-Education",
+    },
+    {
+      key: "photoBeneficiariesNutrition",
+      label: "Nutrition Beneficiaries",
+    },
+  ];
+
+  const COLUMN_COUNT = 13 + PHOTO_COLUMNS.length;
 
   return (
     <div className="space-y-5">
@@ -369,74 +396,92 @@ export default function WorkerList() {
             <thead>
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
 
-                <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                {/* S.NO */}
+                <th className="whitespace-nowrap px-4 py-3 text-center font-semibold">
                   S.No.
                 </th>
 
+                {/* DATE */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.date")}
                 </th>
 
+                {/* BLOCK */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.block")}
                 </th>
 
+                {/* SECTOR */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.sector")}
                 </th>
 
+                {/* AWC */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.awc")}
                 </th>
 
+                {/* WORKER */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.worker")}
                 </th>
 
+                {/* CENTER OPEN */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.centerOpen")}
                 </th>
 
+                {/* REGISTERED CHILDREN */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.registeredChildren")}
                 </th>
 
+                {/* MORNING MEAL COUNT */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.morningMealCount")}
                 </th>
 
+                {/* MORNING MENU */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.morningMenu")}
                 </th>
 
+                {/* MILK POUCH */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.milkPouchCount")}
                 </th>
 
+                {/* AFTERNOON MENU */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.afternoonMenu")}
                 </th>
 
+                {/* QUALITY */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.quality")}
                 </th>
 
-                {/* PHOTO COLUMNS */}
-                {Array.from({ length: MAX_PHOTOS }).map((_, index) => (
+                {/* ========================== */}
+                {/* PHOTO HEADERS */}
+                {/* ========================== */}
+
+                {PHOTO_COLUMNS.map((photoColumn) => (
                   <th
-                    key={`photo-header-${index}`}
-                    className="w-[90px] min-w-[90px] max-w-[90px] whitespace-nowrap px-2 py-3 text-center font-semibold"
+                    key={photoColumn.key}
+                    className="w-[140px] min-w-[140px] max-w-[140px] px-2 py-3 text-center font-semibold"
                   >
-                    Photo {index + 1}
+                    {photoColumn.label}
                   </th>
                 ))}
 
+                {/* APPROVAL */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.approval")}
                 </th>
 
               </tr>
             </thead>
+
             <tbody>
               {isLoading ? (
                 <tr>
@@ -454,7 +499,8 @@ export default function WorkerList() {
                     className="px-4 py-8 text-center text-sm text-muted"
                   >
                     {activeFilterCount > 0
-                      ? t("workerList.noFilterMatch") || "No records match the current filters"
+                      ? t("workerList.noFilterMatch") ||
+                      "No records match the current filters"
                       : t("workerList.empty")}
                   </td>
                 </tr>
@@ -465,108 +511,187 @@ export default function WorkerList() {
                     className="border-b border-line last:border-0 hover:bg-primary-light/40"
                   >
 
+                    {/* ========================== */}
                     {/* S.NO */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3 text-center font-semibold">
                       {rowIndex + 1}
                     </td>
 
+                    {/* ========================== */}
                     {/* DATE */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-ink">
                       {new Date(r.date).toLocaleDateString("en-IN")}
                     </td>
 
+                    {/* ========================== */}
                     {/* BLOCK */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
-                      {r.blockName || r.blockCode}
+                      {r.blockName || r.blockCode || "-"}
                     </td>
 
+                    {/* ========================== */}
                     {/* SECTOR */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
-                      {r.sectorName || r.sectorCode}
+                      {r.sectorName || r.sectorCode || "-"}
                     </td>
 
+                    {/* ========================== */}
                     {/* AWC */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
-                      {r.awcName || r.awcCode}
+                      {r.awcName || r.awcCode || "-"}
                     </td>
 
+                    {/* ========================== */}
                     {/* WORKER */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
                       {r.createdBy?.name || "-"}
                     </td>
 
+                    {/* ========================== */}
                     {/* CENTER OPEN */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
                       <StatusPill value={r.centerOpen} />
                     </td>
 
+                    {/* ========================== */}
                     {/* REGISTERED CHILDREN */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3 text-center font-mono">
                       {r.registeredChildrenCount ?? 0}
                     </td>
 
+                    {/* ========================== */}
                     {/* MORNING MEAL COUNT */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3 text-center font-mono">
                       {r.morningMealChildrenCount ?? 0}
                     </td>
 
+                    {/* ========================== */}
                     {/* MORNING MENU */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
                       {r.morningMenu || "-"}
                     </td>
 
+                    {/* ========================== */}
                     {/* MILK POUCH */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3 text-center font-mono">
                       {r.milkPouchCount ?? 0}
                     </td>
 
+                    {/* ========================== */}
                     {/* AFTERNOON MENU */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
                       {r.afternoonMenu || "-"}
                     </td>
 
+                    {/* ========================== */}
                     {/* QUALITY */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3 capitalize">
                       {r.qualityOfMeal || "-"}
                     </td>
 
-                    {/* ============================= */}
-                    {/* 8 SEPARATE PHOTO TD COLUMNS - click to open full screen with detail */}
-                    {/* ============================= */}
 
-                    {Array.from({ length: MAX_PHOTOS }).map((_, index) => {
-                      const photo = r?.photos?.[index];
+                    {/* ================================================== */}
+                    {/* PHOTOS - EACH PHOTO HAS ITS OWN TD, WITH ITS TYPE/LABEL */}
+                    {/* ================================================== */}
+
+                    {PHOTO_COLUMNS.map((photoColumn) => {
+                      const photo = r?.[photoColumn.key];
 
                       return (
                         <td
-                          key={`photo-${r._id}-${index}`}
-                          className="w-[90px] min-w-[90px] max-w-[90px] px-2 py-2 text-center align-middle"
+                          key={`${r._id}-${photoColumn.key}`}
+                          className="w-[140px] min-w-[140px] max-w-[140px] px-2 py-3 align-top"
                         >
-                          <div className="flex justify-center">
+                          <div className="flex flex-col items-center gap-1.5">
+
+                            {/* IMAGE */}
                             <button
                               type="button"
-                              onClick={() => setActivePhoto({ record: r, photoIndex: index })}
-                              className="rounded-lg outline-none ring-primary/40 transition hover:opacity-90 focus:ring-2"
-                              title={t("workerList.viewPhoto") || "View photo"}
+                              onClick={() => {
+                                if (photo?.url) {
+                                  setActivePhoto({
+                                    record: r,
+                                    photo,
+                                    photoKey: photoColumn.key,
+                                    photoLabel: photoColumn.label,
+                                  });
+                                }
+                              }}
+                              disabled={!photo?.url}
+                              className="rounded-lg outline-none transition hover:opacity-90 focus:ring-2 focus:ring-primary/40 disabled:cursor-default"
+                              title={
+                                photo?.url
+                                  ? `View ${photoColumn.label} photo`
+                                  : "No photo available"
+                              }
                             >
                               <img
-                                src={
-                                  photo?.url ||
-                                  "/logo.jpg"
-                                }
-                                alt={`Record photo ${index + 1}`}
-                                className="h-14 w-14 cursor-pointer rounded-lg border border-line object-cover"
+                                src={photo?.url || "/logo.jpg"}
+                                alt={photoColumn.label}
+                                className="h-16 w-16 rounded-lg border border-line object-cover"
                                 onError={(e) => {
                                   e.currentTarget.src = "/logo.jpg";
                                 }}
                               />
                             </button>
+
+                            {/* PHOTO TYPE / LABEL */}
+                            <span className="text-center text-[10px] font-semibold leading-tight text-muted">
+                              {photoColumn.label}
+                            </span>
+
+                            {/* CAPTURE TIME */}
+                            {photo?.capturedAt ? (
+                              <span className="text-center text-[10px] text-muted">
+                                {new Date(
+                                  photo.capturedAt
+                                ).toLocaleTimeString("en-IN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            ) : !photo?.url ? (
+                              <span className="text-[10px] text-muted">
+                                No Photo
+                              </span>
+                            ) : null}
+
                           </div>
                         </td>
                       );
                     })}
 
+
+                    {/* ========================== */}
                     {/* APPROVAL */}
+                    {/* ========================== */}
+
                     <td className="whitespace-nowrap px-4 py-3">
                       <ReviewActions
                         status={r.status}
@@ -596,11 +721,13 @@ export default function WorkerList() {
       {activePhoto && (
         <PhotoDetailModal
           record={activePhoto.record}
-          photoIndex={activePhoto.photoIndex}
+          photo={activePhoto.photo}
+          photoLabel={activePhoto.photoLabel}
           onClose={() => setActivePhoto(null)}
           t={t}
         />
       )}
+
     </div>
   );
 }
