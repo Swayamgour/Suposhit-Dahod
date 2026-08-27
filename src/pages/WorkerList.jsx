@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, RefreshCw, X, MapPin, Calendar, User, Filter, RotateCcw } from "lucide-react";
+import { Plus, RefreshCw, X, MapPin, Calendar, User, Filter, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import StatusPill from "../components/StatusPill.jsx";
 import { ReviewActions } from "../components/ApprovalStatus.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
@@ -187,6 +187,30 @@ export default function WorkerList() {
     setStatusFilter("");
     setCenterOpenFilter("");
   };
+
+  // ---------------------------------------------------
+  // PAGINATION (same pattern as Dashboard: 10 rows/page)
+  // ---------------------------------------------------
+
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+
+  useEffect(() => {
+    setPage(1);
+  }, [fromDate, toDate, blockFilter, sectorFilter, awcFilter, workerFilter, qualityFilter, statusFilter, centerOpenFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(records.length / rowsPerPage));
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  const paginatedRecords = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    return records.slice(start, start + rowsPerPage);
+  }, [records, page]);
 
   const PHOTO_COLUMNS = [
     {
@@ -397,7 +421,7 @@ export default function WorkerList() {
               <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
 
                 {/* S.NO */}
-                <th className="whitespace-nowrap px-4 py-3 text-center font-semibold">
+                <th className="sticky left-0 z-20 whitespace-nowrap bg-bg px-4 py-3 text-center font-semibold">
                   S.No.
                 </th>
 
@@ -505,7 +529,7 @@ export default function WorkerList() {
                   </td>
                 </tr>
               ) : (
-                records.map((r, rowIndex) => (
+                paginatedRecords.map((r, rowIndex) => (
                   <tr
                     key={r._id}
                     className="border-b border-line last:border-0 hover:bg-primary-light/40"
@@ -515,8 +539,8 @@ export default function WorkerList() {
                     {/* S.NO */}
                     {/* ========================== */}
 
-                    <td className="whitespace-nowrap px-4 py-3 text-center font-semibold">
-                      {rowIndex + 1}
+                    <td className="sticky left-0 z-10 whitespace-nowrap bg-surface px-4 py-3 text-center font-semibold">
+                      {(page - 1) * rowsPerPage + rowIndex + 1}
                     </td>
 
                     {/* ========================== */}
@@ -662,12 +686,12 @@ export default function WorkerList() {
                             </button>
 
                             {/* PHOTO TYPE / LABEL */}
-                            <span className="text-center text-[10px] font-semibold leading-tight text-muted">
+                            {/* <span className="text-center text-[10px] font-semibold leading-tight text-muted">
                               {photoColumn.label}
-                            </span>
+                            </span> */}
 
                             {/* CAPTURE TIME */}
-                            {photo?.capturedAt ? (
+                            {/* {photo?.capturedAt ? (
                               <span className="text-center text-[10px] text-muted">
                                 {new Date(
                                   photo.capturedAt
@@ -680,7 +704,7 @@ export default function WorkerList() {
                               <span className="text-[10px] text-muted">
                                 No Photo
                               </span>
-                            ) : null}
+                            ) : null} */}
 
                           </div>
                         </td>
@@ -716,6 +740,45 @@ export default function WorkerList() {
             </tbody>
           </table>
         </div>
+
+        {/* =========================================
+            PAGINATION
+        ========================================= */}
+
+        {records.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3">
+            <span className="text-xs font-medium text-muted">
+              Showing {Math.min((page - 1) * rowsPerPage + 1, records.length)}-
+              {Math.min(page * rowsPerPage, records.length)} of {records.length}
+            </span>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page === 1}
+                className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+
+              <span className="min-w-[90px] text-center text-xs font-semibold text-ink">
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                disabled={page === totalPages}
+                className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {activePhoto && (

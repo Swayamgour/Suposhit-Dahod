@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Users, Search, UserPlus, Trash2, RefreshCw } from "lucide-react";
+import { Users, Search, UserPlus, Trash2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import {
     useGetUsersQuery,
@@ -51,6 +51,30 @@ export default function ApplicationUsersAwc() {
 
     const [updateStatus] = useUpdateUserStatusMutation();
     const [deleteUser] = useDeleteUserMutation();
+
+    // ---------------------------------------------------
+    // PAGINATION (same pattern as Dashboard: 10 rows/page)
+    // ---------------------------------------------------
+
+    const [page, setPage] = useState(1);
+    const rowsPerPage = 10;
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm, roleFilter, statusFilter]);
+
+    const totalPages = Math.max(1, Math.ceil(users.length / rowsPerPage));
+
+    useEffect(() => {
+        if (page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [page, totalPages]);
+
+    const paginatedUsers = useMemo(() => {
+        const start = (page - 1) * rowsPerPage;
+        return users.slice(start, start + rowsPerPage);
+    }, [users, page]);
 
     async function handleStatus(id, status) {
         setTogglingId(id);
@@ -148,7 +172,7 @@ export default function ApplicationUsersAwc() {
                     <table className="data-table w-full text-left text-sm">
                         <thead>
                             <tr className="border-b border-line bg-bg text-[11px] uppercase tracking-wide text-muted">
-                                <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.name")}</th>
+                                <th className="sticky left-0 z-20 whitespace-nowrap bg-bg px-4 py-3 font-semibold">{t("appusers.col.name")}</th>
                                 <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.email")}</th>
                                 <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.role")}</th>
                                 <th className="whitespace-nowrap px-4 py-3 font-semibold">{t("appusers.col.scope")}</th>
@@ -170,9 +194,9 @@ export default function ApplicationUsersAwc() {
                                     </td>
                                 </tr>
                             ) : (
-                                users.map((u) => (
+                                paginatedUsers.map((u) => (
                                     <tr key={u._id} className="border-b border-line last:border-0 hover:bg-primary-light/40">
-                                        <td className="whitespace-nowrap px-4 py-3 font-semibold text-ink">{u.name}</td>
+                                        <td className="sticky left-0 z-10 whitespace-nowrap bg-surface px-4 py-3 font-semibold text-ink">{u.name}</td>
                                         <td className="whitespace-nowrap px-4 py-3">{u.email}</td>
                                         <td className="whitespace-nowrap px-4 py-3">{ROLE_LABELS[u.role] || u.role}</td>
                                         <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted">
@@ -217,6 +241,45 @@ export default function ApplicationUsersAwc() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* =========================================
+                    PAGINATION
+                ========================================= */}
+
+                {users.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3">
+                        <span className="text-xs font-medium text-muted">
+                            Showing {Math.min((page - 1) * rowsPerPage + 1, users.length)}-
+                            {Math.min(page * rowsPerPage, users.length)} of {users.length}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                                disabled={page === 1}
+                                className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <ChevronLeft size={14} />
+                                Prev
+                            </button>
+
+                            <span className="min-w-[90px] text-center text-xs font-semibold text-ink">
+                                Page {page} of {totalPages}
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                                disabled={page === totalPages}
+                                className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                Next
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
