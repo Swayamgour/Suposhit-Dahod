@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Save, X, List as ListIcon } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
-import { useCreateRecordMutation } from "../redux/api.jsx";
+import { useCreateRecordMutation, useUpdateRecordMutation } from "../redux/api.jsx";
 import PhotoGpsCapture, { PHOTO_SLOTS } from "../components/PhotoGpsCapture.jsx";
 
 // Fields match icds-backend/models/Record.js exactly. districtCode/blockCode/
@@ -37,7 +37,7 @@ const selectClass = inputClass;
 // and 1:30 PM. Backend must enforce this too (client-side check is only a
 // convenience - a server-side check is required, see notes below).
 const ENTRY_WINDOW_START_MIN = 9 * 60 + 30; // 9:30 AM
-const ENTRY_WINDOW_END_MIN = 13 * 60 + 30; // 1:30 PM
+const ENTRY_WINDOW_END_MIN = 18 * 60 + 30; // 1:30 PM
 
 function isWithinEntryWindow(d = new Date()) {
   const mins = d.getHours() * 60 + d.getMinutes();
@@ -85,22 +85,82 @@ const emptyForm = {
 // they're taken. Submitting the form maps that array onto these same 6
 // field names, matching models/Record.js exactly.
 
+// Existing record -> form state, for edit mode (WorkerList's pencil icon
+// navigates here with the full record in router state).
+function toFormState(record) {
+  if (!record) return emptyForm;
+  return {
+    ...emptyForm,
+    date: record.date ? String(record.date).slice(0, 10) : emptyForm.date,
+    registeredChildrenCount: record.registeredChildrenCount ?? "",
+    centerOpen: record.centerOpen ?? true,
+    activityStatus: record.activityStatus || "present",
+    morningMealChildrenCount: record.morningMealChildrenCount ?? "",
+    morningMenu: record.morningMenu || "",
+    milkPouchGiven: !!record.milkPouchGiven,
+    milkPouchCount: record.milkPouchCount ?? "",
+    afternoonMealGiven: !!record.afternoonMealGiven,
+    afternoonMealChildrenCount: record.afternoonMealChildrenCount ?? "",
+    afternoonMenu: record.afternoonMenu || "",
+    preEducationConducted: !!record.preEducationConducted,
+    preEducationChildrenCount: record.preEducationChildrenCount ?? "",
+    poshanDishGiven: !!record.poshanDishGiven,
+    poshanMenu: record.poshanMenu || "",
+    poshanBenefitGiven: !!record.poshanBenefitGiven,
+    poshanSudhaCount: record.poshanSudhaCount ?? "",
+    qualityOfMeal: record.qualityOfMeal || "good",
+    remarks: record.remarks || "",
+  };
+}
+
+// Existing record's 6 named photo fields -> the { key, url, latitude,
+// longitude, capturedAt } array PhotoGpsCapture works with, so editing
+// shows the already-captured photos instead of asking to retake everything.
+function toPhotosState(record) {
+  if (!record) return [];
+  return PHOTO_SLOTS.map((slot) => {
+    const photo = record[slot.key];
+    if (!photo?.url) return null;
+    return {
+      key: slot.key,
+      url: photo.url,
+      latitude: photo.latitude,
+      longitude: photo.longitude,
+      capturedAt: photo.capturedAt,
+    };
+  }).filter(Boolean);
+}
+
 export default function WorkerEntry() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { id } = useParams();
+  const routerLocation = useLocation();
+
+  // Edit mode: WorkerList's pencil icon navigates to /workers/edit/:id
+  // with the record passed via router state.
+  const editRecord = routerLocation.state?.record || null;
+  const isEditMode = !!id;
+
   const [active, setActive] = useState("general");
-  const [form, setForm] = useState(emptyForm);
-  const [location, setLocation] = useState(null);
-  const [photos, setPhotos] = useState([]);
+  const [form, setForm] = useState(() => toFormState(editRecord));
+  const [location, setLocation] = useState(
+    editRecord?.checkInLatitude != null && editRecord?.checkInLongitude != null
+      ? { latitude: Number(editRecord.checkInLatitude), longitude: Number(editRecord.checkInLongitude) }
+      : null
+  );
+  const [photos, setPhotos] = useState(() => toPhotosState(editRecord));
   const [error, setError] = useState("");
-  const [createRecord, { isLoading: saving }] = useCreateRecordMutation();
+  const [createRecord, { isLoading: creating }] = useCreateRecordMutation();
+  const [updateRecord, { isLoading: updating }] = useUpdateRecordMutation();
+  const saving = creating || updating;
 
   // Re-check the entry-time window every 30s so the banner/lock updates live
   // if the worker leaves the tab open across 1:30 PM.
   const [withinWindow, setWithinWindow] = useState(() => isWithinEntryWindow());
   React.useEffect(() => {
-    const id = setInterval(() => setWithinWindow(isWithinEntryWindow()), 30000);
-    return () => clearInterval(id);
+    const intervalId = setInterval(() => setWithinWindow(isWithinEntryWindow()), 30000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const set = (key) => (e) => {
@@ -143,7 +203,8 @@ export default function WorkerEntry() {
     // }
 
     try {
-      // POST /api/records - awc role only (enforced server-side)
+      // Same payload shape whether creating or editing - only the endpoint
+      // and HTTP method change (POST /records vs PUT /records/:id).
       const payload = {
         ...form,
         registeredChildrenCount: Number(form.registeredChildrenCount) || 0,
@@ -156,7 +217,14 @@ export default function WorkerEntry() {
         checkInLongitude: location?.longitude,
         ...photoFields,
       };
-      await createRecord(payload).unwrap();
+
+      if (isEditMode) {
+        // PUT /api/records/:id - awc role only (enforced server-side)
+        await updateRecord({ id, ...payload }).unwrap();
+      } else {
+        // POST /api/records - awc role only (enforced server-side)
+        await createRecord(payload).unwrap();
+      }
       navigate("/workers");
     } catch (err) {
       setError(err?.data?.message || t("workerEntry.errSave"));
@@ -170,7 +238,9 @@ export default function WorkerEntry() {
           <p className="font-display text-[13px] font-bold uppercase tracking-[0.2em] text-primary">
             {t("list.records")}
           </p>
-          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">{t("workerEntry.title")}</h1>
+          <h1 className="mt-1 font-display text-2xl font-extrabold text-ink">
+            {isEditMode ? t("workerEntry.editTitle") || "Edit Record" : t("workerEntry.title")}
+          </h1>
           <p className="mt-1 text-sm text-muted">{t("workerEntry.sub")}</p>
         </div>
         <div className="flex gap-2">
@@ -427,7 +497,13 @@ export default function WorkerEntry() {
             className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
           >
             <Save size={16} />
-            {saving ? t("workerEntry.saving") : !withinWindow ? t("workerEntry.closed") : t("workerEntry.saveRecord")}
+            {saving
+              ? t("workerEntry.saving")
+              : !withinWindow
+              ? t("workerEntry.closed")
+              : isEditMode
+              ? t("workerEntry.updateRecord") || "Update Record"
+              : t("workerEntry.saveRecord")}
           </button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Plus, RefreshCw, X, MapPin, Calendar, User, Filter, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Pencil, RefreshCw, X, MapPin, Calendar, User, Filter, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 import StatusPill from "../components/StatusPill.jsx";
 import { ReviewActions } from "../components/ApprovalStatus.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
@@ -239,7 +239,7 @@ export default function WorkerList() {
     },
   ];
 
-  const COLUMN_COUNT = 13 + PHOTO_COLUMNS.length;
+  const COLUMN_COUNT = 13 + PHOTO_COLUMNS.length + (role === ROLES.AWC ? 1 : 0);
 
   return (
     <div className="space-y-5">
@@ -425,6 +425,14 @@ export default function WorkerList() {
                   S.No.
                 </th>
 
+                {/* EDIT - awc only, matches WorkerList in the mobile app's
+                    pencil icon that opens the same record pre-filled */}
+                {role === ROLES.AWC && (
+                  <th className="whitespace-nowrap px-4 py-3 text-center font-semibold">
+                    Edit
+                  </th>
+                )}
+
                 {/* DATE */}
                 <th className="whitespace-nowrap px-4 py-3 font-semibold">
                   {t("workerList.col.date")}
@@ -542,6 +550,23 @@ export default function WorkerList() {
                     <td className="sticky left-0 z-10 whitespace-nowrap bg-surface px-4 py-3 text-center font-semibold">
                       {(page - 1) * rowsPerPage + rowIndex + 1}
                     </td>
+
+                    {/* ========================== */}
+                    {/* EDIT */}
+                    {/* ========================== */}
+
+                    {role === ROLES.AWC && (
+                      <td className="whitespace-nowrap px-4 py-3 text-center">
+                        <Link
+                          to={`/workers/edit/${r._id}`}
+                          state={{ record: r }}
+                          className="inline-flex items-center justify-center rounded-lg p-2 text-primary transition hover:bg-primary-light/40"
+                          title="Edit entry"
+                        >
+                          <Pencil size={16} />
+                        </Link>
+                      </td>
+                    )}
 
                     {/* ========================== */}
                     {/* DATE */}

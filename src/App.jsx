@@ -52,6 +52,14 @@ export default function App() {
             </RoleGate>
           }
         />
+        <Route
+          path="/workers/edit/:id"
+          element={
+            <RoleGate allow={[ROLES.AWC]}>
+              <WorkerEntry />
+            </RoleGate>
+          }
+        />
 
         <Route path="/charts" element={<Charts />} />
         <Route path="/info" element={<Info />} />

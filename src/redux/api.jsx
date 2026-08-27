@@ -136,6 +136,14 @@ export const api = createApi({
             query: (data) => ({ url: "/records", method: "POST", body: data }),
             invalidatesTags: ["Records", "Dashboard"],
         }),
+        // Full update of an existing record - same payload shape as
+        // createRecord (see WorkerEntry.jsx's handleSubmit), just a PUT to
+        // /records/:id instead of a POST to /records. Used by the pencil
+        // (edit) icon on WorkerList.
+        updateRecord: builder.mutation({
+            query: ({ id, ...data }) => ({ url: `/records/${id}`, method: "PUT", body: data }),
+            invalidatesTags: ["Records", "Dashboard"],
+        }),
         // Add/replace one or more of the 6 photo slots on an existing (still
         // "pending") record - send { <fieldName>: { url, latitude, longitude,
         // capturedAt } } for just the slot(s) you're updating right now, e.g.
@@ -394,6 +402,7 @@ export const {
 
     useGetRecordsQuery,
     useCreateRecordMutation,
+    useUpdateRecordMutation,
     useUpdateRecordPhotosMutation,
     useReviewRecordMutation,
 
