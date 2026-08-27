@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Matches icds-backend server.js -> app.use("/api/...") mounts + PORT (default 5000)
-// const BASE_URL = 'https://icds-backend-goeh.onrender.com/api';
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'https://icds-backend-goeh.onrender.com/api';
+// const BASE_URL = 'http://localhost:5000/api';
 
 
 function getToken() {
