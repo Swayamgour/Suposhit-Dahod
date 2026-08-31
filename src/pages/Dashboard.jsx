@@ -139,7 +139,14 @@ const AGGREGATE_HEADERS = [
 // =====================================================
 
 function getHeaders(level) {
-  const nameColumn = "dash.table.seja";
+  const nameColumnMap = {
+    district: "DISTRICT",
+    block: "BLOCK",
+    sector: "SECTOR",
+    awc: "ANGANWADI CENTRE",
+  };
+
+  const nameColumn = nameColumnMap[level] || "NAME";
 
   if (level === "district") {
     return [
@@ -161,21 +168,44 @@ function getHeaders(level) {
   }
 
   if (level === "sector") {
-    return [nameColumn, "dash.table.totalCentres", ...AGGREGATE_HEADERS];
+    return [
+      nameColumn,
+      "dash.table.totalCentres",
+      ...AGGREGATE_HEADERS,
+    ];
   }
 
-  // AWC — a single centre, no "total centres" column needed
-  return [nameColumn, ...AGGREGATE_HEADERS];
+  // AWC
+  return [
+    nameColumn,
+    ...AGGREGATE_HEADERS,
+  ];
 }
 
 // =====================================================
 // NUMBER HELPER
 // =====================================================
 
+// function numberValue(value) {
+//   const number = Number(value);
+
+//   return Number.isFinite(number) ? number : 0;
+// }
+
 function numberValue(value) {
   const number = Number(value);
 
-  return Number.isFinite(number) ? number : 0;
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  // Invalid / unrealistic large values ko ignore karo
+  if (number < 0 || number > 100000) {
+    console.warn("Invalid dashboard value:", value);
+    return 0;
+  }
+
+  return number;
 }
 
 // =====================================================
