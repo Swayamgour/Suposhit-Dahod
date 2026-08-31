@@ -37,7 +37,7 @@ const selectClass = inputClass;
 // and 1:30 PM. Backend must enforce this too (client-side check is only a
 // convenience - a server-side check is required, see notes below).
 const ENTRY_WINDOW_START_MIN = 9 * 60 + 30; // 9:30 AM
-const ENTRY_WINDOW_END_MIN = 13 * 60 + 30; // 1:30 PM
+const ENTRY_WINDOW_END_MIN = 18 * 60 + 30; // 1:30 PM
 
 function isWithinEntryWindow(d = new Date()) {
   const mins = d.getHours() * 60 + d.getMinutes();

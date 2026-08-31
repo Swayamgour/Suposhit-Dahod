@@ -21,78 +21,163 @@ export function StatusBadge({ status }) {
 
 // canReview: whether the logged-in role is allowed to approve/reject this row
 // onReview(status, remarks): called with "approved" | "rejected"
-export function ReviewActions({ status, canReview, onReview, loading }) {
+export function ReviewActions({
+  status,
+  canReview,
+  onReview,
+  loading,
+}) {
   const { t } = useLanguage();
+
   const [remarksOpen, setRemarksOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
 
-  // No review rights, or already rejected (final state) -> just show the badge
-  if (!canReview || status === "rejected") return <StatusBadge status={status} />;
+  // ==========================================
+  // HANDLE APPROVE / REJECT
+  // ==========================================
+  const handleReview = async () => {
+    if (!pendingAction || loading) return;
 
+    // ```
+    try {
+      // Parent component ka API function call
+      await onReview(pendingAction, remarks);
+
+      // Success ke baad modal close
+      setRemarksOpen(false);
+
+      // Reset remarks
+      setRemarks("");
+
+      // Reset pending action
+      setPendingAction(null);
+    } catch (error) {
+      console.error("Review failed:", error);
+
+      // Error hone par modal open rahega
+      // taaki user dobara try kar sake
+    }
+    // ```
+
+  };
+
+  // ==========================================
+  // NO REVIEW PERMISSION / REJECTED
+  // ==========================================
+  if (!canReview || status === "rejected") {
+    return <StatusBadge status={status} />;
+  }
+
+  // ==========================================
+  // REMARKS INPUT
+  // ==========================================
   if (remarksOpen) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <input
-          autoFocus
-          value={remarks}
-          onChange={(e) => setRemarks(e.target.value)}
-          placeholder={t("approval.remarksPlaceholder")}
-          className="w-32 rounded-md border border-line px-2 py-1 text-xs"
-        />
-        <button
-          onClick={() => onReview(pendingAction, remarks)}
-          disabled={loading}
-          className="rounded-md bg-primary px-2 py-1 text-xs font-semibold text-white disabled:opacity-60"
-        >
-          {loading ? <Loader2 size={12} className="animate-spin" /> : t("approval.confirm")}
-        </button>
-        <button onClick={() => setRemarksOpen(false)} className="text-xs text-muted">
-          {t("approval.cancel")}
-        </button>
-      </div>
-    );
-  }
+    return (<div className="flex items-center gap-1.5">
+      <input
+        autoFocus
+        value={remarks}
+        onChange={(e) => setRemarks(e.target.value)}
+        placeholder={t("approval.remarksPlaceholder")}
+        className="w-32 rounded-md border border-line px-2 py-1 text-xs"
+      />
 
-  // status === "approved": show the badge plus a Reject option, no Approve button
-  if (status === "approved") {
-    return (
-      <div className="flex items-center gap-1.5">
-        <StatusBadge status={status} />
-        <button
-          onClick={() => {
-            setPendingAction("rejected");
-            setRemarksOpen(true);
-          }}
-          className="inline-flex items-center gap-1 rounded-md bg-coral-light px-2 py-1 text-xs font-semibold text-coral hover:bg-coral/20"
-        >
-          <X size={12} /> {t("approval.reject")}
-        </button>
-      </div>
-    );
-  }
-
-  // status === "pending": show both Approve and Reject
-  return (
-    <div className="flex items-center gap-1.5">
+      {/* ``` */}
+      {/* CONFIRM BUTTON */}
       <button
-        onClick={() => {
-          setPendingAction("approved");
-          setRemarksOpen(true);
-        }}
-        className="inline-flex items-center gap-1 rounded-md bg-primary-light px-2 py-1 text-xs font-semibold text-primary-dark hover:bg-primary/20"
+        type="button"
+        onClick={handleReview}
+        disabled={loading}
+        className="rounded-md bg-primary px-2 py-1 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <Check size={12} /> {t("approval.approve")}
+        {loading ? (
+          <Loader2 size={12} className="animate-spin" />
+        ) : (
+          t("approval.confirm")
+        )}
       </button>
+
+      {/* CANCEL BUTTON */}
       <button
+        type="button"
         onClick={() => {
-          setPendingAction("rejected");
-          setRemarksOpen(true);
+          if (loading) return;
+
+          setRemarksOpen(false);
+          setRemarks("");
+          setPendingAction(null);
         }}
-        className="inline-flex items-center gap-1 rounded-md bg-coral-light px-2 py-1 text-xs font-semibold text-coral hover:bg-coral/20"
+        disabled={loading}
+        className="text-xs text-muted disabled:opacity-60"
       >
-        <X size={12} /> {t("approval.reject")}
+        {t("approval.cancel")}
       </button>
     </div>
+    );
+    // ```
+
+  }
+
+  // ==========================================
+  // APPROVED
+  // ==========================================
+  if (status === "approved") {
+    return (<div className="flex items-center gap-1.5"> <StatusBadge status={status} />
+
+      {/* ``` */}
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => {
+          setPendingAction("rejected");
+          setRemarks("");
+          setRemarksOpen(true);
+        }}
+        className="inline-flex items-center gap-1 rounded-md bg-coral-light px-2 py-1 text-xs font-semibold text-coral hover:bg-coral/20 disabled:opacity-60"
+      >
+        <X size={12} />
+        {t("approval.reject")}
+      </button>
+    </div>
+    );
+    // ```
+
+  }
+
+  // ==========================================
+  // PENDING
+  // ==========================================
+  return (<div className="flex items-center gap-1.5">
+    {/* APPROVE */}
+    <button
+      type="button"
+      disabled={loading}
+      onClick={() => {
+        setPendingAction("approved");
+        setRemarks("");
+        setRemarksOpen(true);
+      }}
+      className="inline-flex items-center gap-1 rounded-md bg-primary-light px-2 py-1 text-xs font-semibold text-primary-dark hover:bg-primary/20 disabled:opacity-60"
+    > <Check size={12} />
+      {t("approval.approve")} </button>
+
+    {/* ``` */}
+    {/* REJECT */}
+    <button
+      type="button"
+      disabled={loading}
+      onClick={() => {
+        setPendingAction("rejected");
+        setRemarks("");
+        setRemarksOpen(true);
+      }}
+      className="inline-flex items-center gap-1 rounded-md bg-coral-light px-2 py-1 text-xs font-semibold text-coral hover:bg-coral/20 disabled:opacity-60"
+    >
+      <X size={12} />
+      {t("approval.reject")}
+    </button>
+  </div>
+    // ```
+
   );
 }

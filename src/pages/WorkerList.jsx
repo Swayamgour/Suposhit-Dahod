@@ -749,13 +749,25 @@ export default function WorkerList() {
                           outranks(role, ROLES.AWC)
                         }
                         loading={reviewing}
-                        onReview={(status, remarks) =>
-                          reviewRecord({
-                            id: r._id,
-                            status,
-                            remarks,
-                          })
-                        }
+                        onReview={async (status, remarks) => {
+                          try {
+                            // 1️⃣ Record approve/reject
+                            await reviewRecord({
+                              id: r._id,
+                              status,
+                              remarks,
+                            }).unwrap();
+
+                            // 2️⃣ Latest records automatically fetch
+                            await refetch();
+
+                            return true;
+
+                          } catch (error) {
+                            console.error("Review failed:", error);
+                            throw error;
+                          }
+                        }}
                       />
                     </td>
 
