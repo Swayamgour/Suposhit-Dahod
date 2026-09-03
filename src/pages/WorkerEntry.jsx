@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Save, X, List as ListIcon } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
-import { useCreateRecordMutation, useUpdateRecordMutation } from "../redux/api.jsx";
+import { useCreateRecordMutation, useUpdateRecordMutation, useGetRecordsChildQuery } from "../redux/api.jsx";
 import PhotoGpsCapture, { PHOTO_SLOTS } from "../components/PhotoGpsCapture.jsx";
 
 // Fields match icds-backend/models/Record.js exactly. districtCode/blockCode/
@@ -15,6 +15,71 @@ const sections = [
   { id: "extra", labelKey: "workerEntry.section.extra" },
   { id: "proof", labelKey: "workerEntry.section.proof" },
 ];
+
+// ---------------------------------------------------------------------------
+// Weekly menu chart (from the AWC's printed "ગરમ અને પોષણ સુધાનું મેનુ" sheet).
+// Keyed by JS Date.getDay() (0 = Sunday ... 6 = Saturday). Each day lists the
+// allowed options for morning nasta, afternoon nasta, and Poshan Sudha Yojana
+// menu, so the worker picks from a dropdown instead of typing free text.
+// Sunday has no entry on the chart (center is normally closed), so it's left
+// empty below - the selects will just show the "select" placeholder.
+// ---------------------------------------------------------------------------
+const DAY_MENU = {
+  1: {
+    // સોમવાર - Monday
+    morning: ["સુખડી અને ફ્રુટ"],
+    afternoon: ["થેપલા-મગ"],
+    poshan: ["થેપલા,મગ,દાળ,ભાત"],
+  },
+  2: {
+    // મંગળવાર - Tuesday
+    morning: ["વેજિટેબલ પુલાવ"],
+    afternoon: ["પરોઠા અને ચણા"],
+    poshan: ["પરોઠા,ચણા,શાક,દાળ,ભાત"],
+  },
+  3: {
+    // બુધવાર - Wednesday
+    morning: ["શીરો"],
+    afternoon: ["દાળ,ભાત,શાક"],
+    poshan: [
+      "ગવ્યા પુડલા,શાક,દાળ,ભાત",
+      "ગળી ભાખરી,શાક,દાળ,ભાત",
+      "સુખડી,શાક,દાળ,ભાત",
+      "શીરો,શાક,દાળ,ભાત",
+    ],
+  },
+  4: {
+    // ગુરુવાર - Thursday
+    morning: ["લીલીભાજીના વઘારેલા મુઠિયા અને ફ્રુટ"],
+    afternoon: ["ખીચડી-શાક"],
+    poshan: ["રોટલી,લીલા શાકભાજી,ખીચડી"],
+  },
+  5: {
+    // શુક્રવાર - Friday
+    morning: ["શીરો", "સુખડી"],
+    afternoon: ["પરોઠા અને ચણા"],
+    poshan: ["પરોઠા,ચણા,શાક,દાળ,ભાત"],
+  },
+  6: {
+    // શનિવાર - Saturday
+    morning: ["ગવ્યા પુડલા", "ગળી ભાખરી", "શીરો", "મુઠિયા"],
+    afternoon: ["દાળ,ભાત,શાક"],
+    poshan: [
+      "ગવ્યા પુડલા,શાક,દાળ,ભાત",
+      "ગળી ભાખરી,શાક,દાળ,ભાત",
+      "સુખડી,શાક,દાળ,ભાત",
+      "શીરો,શાક,દાળ,ભાત",
+    ],
+  },
+};
+
+// Returns the chart's option list for a given date string ("YYYY-MM-DD")
+// and meal type ("morning" | "afternoon" | "poshan").
+function getDayMenuOptions(dateStr, mealType) {
+  if (!dateStr) return [];
+  const day = new Date(dateStr).getDay();
+  return DAY_MENU[day]?.[mealType] || [];
+}
 
 function Field({ label, required, hint, children }) {
   return (
@@ -32,6 +97,8 @@ function Field({ label, required, hint, children }) {
 const inputClass =
   "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 const selectClass = inputClass;
+const readOnlyInputClass =
+  "w-full rounded-lg border border-line bg-bg px-3 py-2.5 text-sm text-ink cursor-not-allowed";
 
 // Entry window: AWC workers can only submit today's record between 9:30 AM
 // and 1:30 PM. Backend must enforce this too (client-side check is only a
@@ -47,6 +114,9 @@ function isWithinEntryWindow(d = new Date()) {
 const emptyForm = {
   date: new Date().toISOString().slice(0, 10),
   registeredChildrenCount: "",
+  // NEW: how many of the registered children actually attended today -
+  // separate from the per-meal attendance counts below.
+  childrenAttendedCount: "",
   centerOpen: true,
 
   // NEW: today's activity status - present (normal entry), meeting, or leave
@@ -54,14 +124,14 @@ const emptyForm = {
 
   // Morning
   morningMealChildrenCount: "",
-  morningMenu: "", // NEW: today's morning dish name
+  morningMenu: "", // now chosen from a day-wise dropdown, see DAY_MENU
   milkPouchGiven: false,
   milkPouchCount: "",
 
   // Afternoon
   afternoonMealGiven: false,
   afternoonMealChildrenCount: "",
-  afternoonMenu: "", // NEW: today's afternoon dish name
+  afternoonMenu: "", // now chosen from a day-wise dropdown, see DAY_MENU
 
   // Pre-education
   preEducationConducted: false,
@@ -69,9 +139,9 @@ const emptyForm = {
 
   // Poshan Sudha Yojana
   poshanDishGiven: false,
-  poshanMenu: "", // NEW: today's poshan sudha dish name
+  poshanMenu: "", // now chosen from a day-wise dropdown, see DAY_MENU
   poshanBenefitGiven: false,
-  poshanSudhaCount: "", // NEW: પોષણ સુધા યોજનાનો લાભ લેતા લાભાર્થીની સંખ્યા
+  poshanSudhaCount: "", // પોષણ સુધા યોજનાનો લાભ લેતા લાભાર્થીની સંખ્યા
 
   qualityOfMeal: "good",
   remarks: "",
@@ -93,6 +163,7 @@ function toFormState(record) {
     ...emptyForm,
     date: record.date ? String(record.date).slice(0, 10) : emptyForm.date,
     registeredChildrenCount: record.registeredChildrenCount ?? "",
+    childrenAttendedCount: record.childrenAttendedCount ?? "",
     centerOpen: record.centerOpen ?? true,
     activityStatus: record.activityStatus || "present",
     morningMealChildrenCount: record.morningMealChildrenCount ?? "",
@@ -153,7 +224,18 @@ export default function WorkerEntry() {
   const [error, setError] = useState("");
   const [createRecord, { isLoading: creating }] = useCreateRecordMutation();
   const [updateRecord, { isLoading: updating }] = useUpdateRecordMutation();
+  const { data } = useGetRecordsChildQuery();
   const saving = creating || updating;
+
+  // Total registered children (3-6 yrs) comes from the AWC's own record
+  // (useGetRecordsChildQuery -> data.children3To6Y), not typed by hand.
+  // Only auto-fill it for a brand-new entry - an edit shouldn't silently
+  // overwrite whatever was already saved on that record.
+  React.useEffect(() => {
+    if (!isEditMode && data?.data?.children3To6Y != null) {
+      setForm((f) => ({ ...f, registeredChildrenCount: data?.data?.children3To6Y }));
+    }
+  }, [data, isEditMode]);
 
   // Re-check the entry-time window every 30s so the banner/lock updates live
   // if the worker leaves the tab open across 1:30 PM.
@@ -166,6 +248,23 @@ export default function WorkerEntry() {
   const set = (key) => (e) => {
     const val = e?.target ? (e.target.type === "checkbox" ? e.target.checked : e.target.value) : e;
     setForm((f) => ({ ...f, [key]: val }));
+  };
+
+  // If the date changes and the previously picked menu isn't valid for the
+  // new day, clear it so the worker doesn't accidentally submit a mismatched
+  // menu from a different day of the week.
+  const handleDateChange = (e) => {
+    const newDate = e.target.value;
+    setForm((f) => {
+      const next = { ...f, date: newDate };
+      ["morningMenu", "afternoonMenu", "poshanMenu"].forEach((field) => {
+        const mealType = field === "morningMenu" ? "morning" : field === "afternoonMenu" ? "afternoon" : "poshan";
+        if (f[field] && !getDayMenuOptions(newDate, mealType).includes(f[field])) {
+          next[field] = "";
+        }
+      });
+      return next;
+    });
   };
 
   async function handleSubmit(e) {
@@ -208,6 +307,7 @@ export default function WorkerEntry() {
       const payload = {
         ...form,
         registeredChildrenCount: Number(form.registeredChildrenCount) || 0,
+        childrenAttendedCount: Number(form.childrenAttendedCount) || 0,
         morningMealChildrenCount: Number(form.morningMealChildrenCount) || 0,
         milkPouchCount: Number(form.milkPouchCount) || 0,
         afternoonMealChildrenCount: Number(form.afternoonMealChildrenCount) || 0,
@@ -230,6 +330,10 @@ export default function WorkerEntry() {
       setError(err?.data?.message || t("workerEntry.errSave"));
     }
   }
+
+  const morningMenuOptions = getDayMenuOptions(form.date, "morning");
+  const afternoonMenuOptions = getDayMenuOptions(form.date, "afternoon");
+  const poshanMenuOptions = getDayMenuOptions(form.date, "poshan");
 
   return (
     <div className="space-y-5">
@@ -287,18 +391,40 @@ export default function WorkerEntry() {
         {active === "general" && (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             {/* <Field label="Date" required>
-              <input type="date" required value={form.date} onChange={set("date")} className={inputClass} />
+              <input type="date" required value={form.date} onChange={handleDateChange} className={inputClass} />
             </Field> */}
-            <Field label={t("workerEntry.field.registeredChildren")} required>
+
+            {/* NEW: total registered children, pulled from the AWC's own
+                record via useGetRecordsChildQuery (data.children3To6Y).
+                Read-only - the worker can't type this by hand anymore. */}
+            <Field
+              label={t("workerEntry.field.registeredChildren")}
+              required
+              hint={t("workerEntry.field.registeredChildrenHint") || "Auto-filled from your AWC record"}
+            >
+              <input
+                type="number"
+                value={form.registeredChildrenCount}
+                readOnly
+                disabled
+                className={readOnlyInputClass}
+              />
+            </Field>
+
+            {/* NEW: how many of those registered children actually attended
+                today - this one IS editable by the worker. */}
+            <Field label={t("workerEntry.field.childrenAttended") || "Children Attended Today"} required>
               <input
                 type="number"
                 min="0"
+                max={form.registeredChildrenCount || undefined}
                 required
-                value={form.registeredChildrenCount}
-                onChange={set("registeredChildrenCount")}
+                value={form.childrenAttendedCount}
+                onChange={set("childrenAttendedCount")}
                 className={inputClass}
               />
             </Field>
+
             <Field label={t("workerEntry.field.centerOpenToday")}>
               <select
                 value={form.centerOpen ? "yes" : "no"}
@@ -330,15 +456,21 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
+
+            {/* CHANGED: was a free-text input, now a day-wise dropdown built
+                from the printed weekly menu chart (DAY_MENU above). Options
+                change automatically based on form.date's day of week. */}
             <Field label={t("workerEntry.field.morningMenu")} hint={t("workerEntry.field.morningMenuHint")}>
-              <input
-                type="text"
-                value={form.morningMenu}
-                onChange={set("morningMenu")}
-                className={inputClass}
-                placeholder={t("workerEntry.field.morningMenuHint")}
-              />
+              <select value={form.morningMenu} onChange={set("morningMenu")} className={selectClass}>
+                <option value="">{t("common.select") || "-- Select --"}</option>
+                {morningMenuOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </Field>
+
             <Field label={t("workerEntry.field.milkPouchCount")}>
               <input
                 type="number"
@@ -382,15 +514,19 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
+
+            {/* CHANGED: day-wise dropdown, same as morning menu. */}
             <Field label={t("workerEntry.field.afternoonMenu")} hint={t("workerEntry.field.afternoonMenuHint")}>
-              <input
-                type="text"
-                value={form.afternoonMenu}
-                onChange={set("afternoonMenu")}
-                className={inputClass}
-                placeholder={t("workerEntry.field.afternoonMenuHint")}
-              />
+              <select value={form.afternoonMenu} onChange={set("afternoonMenu")} className={selectClass}>
+                <option value="">{t("common.select") || "-- Select --"}</option>
+                {afternoonMenuOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </Field>
+
             <Field label={t("workerEntry.field.qualityOfMeal")}>
               <select value={form.qualityOfMeal} onChange={set("qualityOfMeal")} className={selectClass}>
                 <option value="good">{t("workerEntry.quality.good")}</option>
@@ -422,14 +558,19 @@ export default function WorkerEntry() {
                 className={inputClass}
               />
             </Field>
+
+            {/* CHANGED: day-wise dropdown for the Poshan Sudha Yojana menu. */}
             <Field label={t("workerEntry.field.poshanMenu")}>
-              <input
-                type="text"
-                value={form.poshanMenu}
-                onChange={set("poshanMenu")}
-                className={inputClass}
-              />
+              <select value={form.poshanMenu} onChange={set("poshanMenu")} className={selectClass}>
+                <option value="">{t("common.select") || "-- Select --"}</option>
+                {poshanMenuOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </Field>
+
             <Field label={t("workerEntry.field.poshanSudhaCount")}>
               <input
                 type="number"
@@ -500,10 +641,10 @@ export default function WorkerEntry() {
             {saving
               ? t("workerEntry.saving")
               : !withinWindow
-              ? t("workerEntry.closed")
-              : isEditMode
-              ? t("workerEntry.updateRecord") || "Update Record"
-              : t("workerEntry.saveRecord")}
+                ? t("workerEntry.closed")
+                : isEditMode
+                  ? t("workerEntry.updateRecord") || "Update Record"
+                  : t("workerEntry.saveRecord")}
           </button>
         </div>
       </form>

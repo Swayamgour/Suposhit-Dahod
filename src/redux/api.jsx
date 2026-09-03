@@ -132,6 +132,12 @@ export const api = createApi({
             },
             providesTags: ["Records"],
         }),
+
+
+        getRecordsChild: builder.query({
+            query: () => "/records/awc-children",
+            providesTags: ["Records"],
+        }),
         createRecord: builder.mutation({
             query: (data) => ({ url: "/records", method: "POST", body: data }),
             invalidatesTags: ["Records", "Dashboard"],
@@ -401,6 +407,7 @@ export const {
     useUploadPhotosMutation,
 
     useGetRecordsQuery,
+    useGetRecordsChildQuery,
     useCreateRecordMutation,
     useUpdateRecordMutation,
     useUpdateRecordPhotosMutation,
