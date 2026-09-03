@@ -30,22 +30,49 @@ const STAT_CARDS = [
     key: "totalCentres",
     icon: Building2,
     tone: "primary",
-    labelKey: "dash.card1",
     fallback: "Total Anganwadi Centres",
   },
   {
     key: "totalOpen",
     icon: LayoutDashboard,
     tone: "accent",
-    labelKey: "dash.card2",
     fallback: "Centres Open",
   },
   {
-    key: "totalFed",
+    key: "totalClosed",
+    icon: Building2,
+    tone: "coral",
+    fallback: "Centres Closed",
+  },
+  {
+    key: "morningMealChildrenCount",
+    icon: UtensilsCrossed,
+    tone: "primary",
+    fallback: "Morning Meal Children",
+  },
+  {
+    key: "milkPouchCount",
+    icon: UtensilsCrossed,
+    tone: "accent",
+    fallback: "Milk Pouch Count",
+  },
+  {
+    key: "afternoonMealChildrenCount",
     icon: UtensilsCrossed,
     tone: "coral",
-    labelKey: "dash.card3",
-    fallback: "Children Fed",
+    fallback: "Afternoon Meal Children",
+  },
+  {
+    key: "poshanSudhaCount",
+    icon: UtensilsCrossed,
+    tone: "primary",
+    fallback: "Poshan Sudha Beneficiaries",
+  },
+  {
+    key: "preEducationChildrenCount",
+    icon: LayoutDashboard,
+    tone: "accent",
+    fallback: "Pre Education Children",
   },
 ];
 
@@ -185,12 +212,6 @@ function getHeaders(level) {
 // =====================================================
 // NUMBER HELPER
 // =====================================================
-
-// function numberValue(value) {
-//   const number = Number(value);
-
-//   return Number.isFinite(number) ? number : 0;
-// }
 
 function numberValue(value) {
   const number = Number(value);
@@ -419,29 +440,6 @@ export default function Dashboard() {
   const activeLevel = data?.level || appliedFilter.level || "sector";
 
   // ===================================================
-  // STATS
-  // ===================================================
-
-  const stats = useMemo(() => {
-    return rows.reduce(
-      (result, row) => {
-        result.totalCentres += numberValue(row?.totalAwc);
-
-        result.totalOpen += numberValue(row?.awcOpenYes);
-
-        result.totalFed += numberValue(row?.morningMealChildrenCount);
-
-        return result;
-      },
-      {
-        totalCentres: 0,
-        totalOpen: 0,
-        totalFed: 0,
-      },
-    );
-  }, [rows]);
-
-  // ===================================================
   // SEARCH FILTER
   // ===================================================
 
@@ -458,6 +456,80 @@ export default function Dashboard() {
         .includes(query),
     );
   }, [rows, search]);
+
+  // ===================================================
+  // STATS
+  // Table ke filtered Total ke according upper cards
+  // ===================================================
+
+  const stats = useMemo(() => {
+    return filteredRows.reduce(
+      (result, row) => {
+        // ===============================================
+        // CENTRES
+        // ===============================================
+
+        result.totalCentres += numberValue(row?.totalAwc);
+
+        result.totalOpen += numberValue(row?.awcOpenYes);
+
+        result.totalClosed += numberValue(row?.awcOpenNo);
+
+        // ===============================================
+        // MORNING
+        // ===============================================
+
+        result.morningMealChildrenCount += numberValue(
+          row?.morningMealChildrenCount
+        );
+
+        // ===============================================
+        // MILK
+        // ===============================================
+
+        result.milkPouchCount += numberValue(
+          row?.milkPouchCount
+        );
+
+        // ===============================================
+        // AFTERNOON
+        // ===============================================
+
+        result.afternoonMealChildrenCount += numberValue(
+          row?.afternoonMealChildrenCount
+        );
+
+        // ===============================================
+        // POSHAN SUDHA
+        // ===============================================
+
+        result.poshanSudhaCount += numberValue(
+          row?.poshanSudhaCount
+        );
+
+        // ===============================================
+        // PRE EDUCATION
+        // ===============================================
+
+        result.preEducationChildrenCount += numberValue(
+          row?.preEducationChildrenCount
+        );
+
+        return result;
+      },
+      {
+        totalCentres: 0,
+        totalOpen: 0,
+        totalClosed: 0,
+
+        morningMealChildrenCount: 0,
+        milkPouchCount: 0,
+        afternoonMealChildrenCount: 0,
+        poshanSudhaCount: 0,
+        preEducationChildrenCount: 0,
+      }
+    );
+  }, [filteredRows]);
 
   // ===================================================
   // RESET PAGE
@@ -673,8 +745,8 @@ export default function Dashboard() {
 
         {/* STAT CARDS */}
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          {STAT_CARDS.map(({ key, labelKey, fallback, icon: Icon, tone }) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {STAT_CARDS.map(({ key, fallback, icon: Icon, tone }) => (
             <div
               key={key}
               className="rounded-xl border border-line bg-bg p-4 transition-transform hover:-translate-y-0.5"
@@ -690,7 +762,7 @@ export default function Dashboard() {
               </p>
 
               <p className="mt-0.5 text-[13px] font-semibold text-ink">
-                {t(labelKey) || fallback}
+                {fallback}
               </p>
             </div>
           ))}
