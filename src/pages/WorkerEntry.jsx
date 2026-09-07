@@ -112,7 +112,10 @@ function isWithinEntryWindow(d = new Date()) {
 }
 
 const emptyForm = {
-  date: new Date().toISOString().slice(0, 10),
+  // date: new Date().toISOString().slice(0, 10),
+  date: new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }),
   registeredChildrenCount: "",
   // NEW: how many of the registered children actually attended today -
   // separate from the per-meal attendance counts below.
