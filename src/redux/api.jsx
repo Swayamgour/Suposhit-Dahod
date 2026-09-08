@@ -124,12 +124,36 @@ export const api = createApi({
         getRecords: builder.query({
             query: (params = {}) => {
                 const qs = new URLSearchParams();
-                if (params.fromDate) qs.set("fromDate", params.fromDate);
-                if (params.toDate) qs.set("toDate", params.toDate);
-                if (params.status) qs.set("status", params.status);
+
+                // =========================
+                // DATE FILTER
+                // =========================
+                if (params.fromDate) {
+                    qs.set("fromDate", params.fromDate);
+                }
+
+                if (params.toDate) {
+                    qs.set("toDate", params.toDate);
+                }
+
+                // =========================
+                // STATUS FILTER
+                // =========================
+                if (params.status) {
+                    qs.set("status", params.status);
+                }
+
+                // =========================
+                // PAGINATION
+                // =========================
+                qs.set("page", params.page || 1);
+                qs.set("limit", params.limit || 10);
+
                 const s = qs.toString();
+
                 return `/records${s ? `?${s}` : ""}`;
             },
+
             providesTags: ["Records"],
         }),
 

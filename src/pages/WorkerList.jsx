@@ -155,9 +155,29 @@ export default function WorkerList() {
   const [statusFilter, setStatusFilter] = useState("");
   const [centerOpenFilter, setCenterOpenFilter] = useState("");
 
-  const { data, isLoading, isFetching, error, refetch } = useGetRecordsQuery({ fromDate, toDate });
-  const [reviewRecord, { isLoading: reviewing }] = useReviewRecordMutation();
+
+  const [page, setPage] = useState(1);
+  const rowsPerPage = 10;
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error,
+    refetch,
+  } = useGetRecordsQuery({
+    fromDate,
+    toDate,
+    page,
+    limit: rowsPerPage,
+  });
+
   const allRecords = data?.records || [];
+  const pagination = data?.pagination;
+
+  // const { data, isLoading, isFetching, error, refetch } = useGetRecordsQuery({ fromDate, toDate });
+  const [reviewRecord, { isLoading: reviewing }] = useReviewRecordMutation();
+  // const allRecords = data?.records || [];
 
   // Full-screen photo viewer state: exact record + photo object + its label ("type")
   const [activePhoto, setActivePhoto] = useState(null); // { record, photo, photoKey, photoLabel }
@@ -192,25 +212,32 @@ export default function WorkerList() {
   // PAGINATION (same pattern as Dashboard: 10 rows/page)
   // ---------------------------------------------------
 
-  const [page, setPage] = useState(1);
-  const rowsPerPage = 10;
+  // const [page, setPage] = useState(1);
+  // const rowsPerPage = 10;
+
+  // useEffect(() => {
+  //   setPage(1);
+  // }, [fromDate, toDate, blockFilter, sectorFilter, awcFilter, workerFilter, qualityFilter, statusFilter, centerOpenFilter]);
+
 
   useEffect(() => {
     setPage(1);
-  }, [fromDate, toDate, blockFilter, sectorFilter, awcFilter, workerFilter, qualityFilter, statusFilter, centerOpenFilter]);
+  }, [fromDate, toDate]);
 
-  const totalPages = Math.max(1, Math.ceil(records.length / rowsPerPage));
+  // const totalPages = Math.max(1, Math.ceil(records.length / rowsPerPage));
 
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+  // useEffect(() => {
+  //   if (page > totalPages) {
+  //     setPage(totalPages);
+  //   }
+  // }, [page, totalPages]);
 
-  const paginatedRecords = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return records.slice(start, start + rowsPerPage);
-  }, [records, page]);
+  // const paginatedRecords = useMemo(() => {
+  //   const start = (page - 1) * rowsPerPage;
+  //   return records.slice(start, start + rowsPerPage);
+  // }, [records, page]);
+
+
 
   const PHOTO_COLUMNS = [
     {
@@ -537,7 +564,7 @@ export default function WorkerList() {
                   </td>
                 </tr>
               ) : (
-                paginatedRecords.map((r, rowIndex) => (
+                records?.map((r, rowIndex) => (
                   <tr
                     key={r._id}
                     className="border-b border-line last:border-0 hover:bg-primary-light/40"
@@ -782,37 +809,54 @@ export default function WorkerList() {
             PAGINATION
         ========================================= */}
 
-        {records.length > 0 && (
+        {records.length > 0 && pagination && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3">
+
             <span className="text-xs font-medium text-muted">
-              Showing {Math.min((page - 1) * rowsPerPage + 1, records.length)}-
-              {Math.min(page * rowsPerPage, records.length)} of {records.length}
+              Showing{" "}
+              {(pagination.page - 1) * pagination.limit + 1}
+              {" - "}
+              {Math.min(
+                pagination.page * pagination.limit,
+                pagination.totalRecords
+              )}
+              {" of "}
+              {pagination.totalRecords}
             </span>
 
             <div className="flex items-center gap-2">
+
+              {/* PREVIOUS */}
               <button
                 type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page === 1}
+                onClick={() =>
+                  setPage((current) => Math.max(1, current - 1))
+                }
+                disabled={!pagination.hasPreviousPage || isFetching}
                 className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronLeft size={14} />
                 Prev
               </button>
 
+              {/* PAGE INFO */}
               <span className="min-w-[90px] text-center text-xs font-semibold text-ink">
-                Page {page} of {totalPages}
+                Page {pagination.page} of {pagination.totalPages}
               </span>
 
+              {/* NEXT */}
               <button
                 type="button"
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                disabled={page === totalPages}
+                onClick={() =>
+                  setPage((current) => current + 1)
+                }
+                disabled={!pagination.hasNextPage || isFetching}
                 className="flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-bg disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
                 <ChevronRight size={14} />
               </button>
+
             </div>
           </div>
         )}
