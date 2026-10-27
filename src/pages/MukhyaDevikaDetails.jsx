@@ -149,7 +149,7 @@ export default function MukhyaDevikaDetails() {
                     <td className="whitespace-nowrap px-4 py-3">
                       <ReviewActions
                         status={e.status}
-                        canReview={[ROLES.DISTRICT, ROLES.BLOCK].includes(role)}
+                        canReview={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR].includes(role)}
                         loading={reviewing}
                         onReview={(status, remarks) => reviewEntry({ id: e._id, status, remarks })}
                       />

@@ -11,11 +11,7 @@ function getToken() {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
 }
 
-// Signals AuthContext (see its "auth:session-expired" listener) to log the
-// user out and drop them back on the login screen - used wherever a request
-// comes back 401 (RTK Query base query below, and the plain-fetch upload /
-// report-download helpers in utils/apiClient.js). No full page reload, so
-// in-progress state elsewhere in the app isn't lost unnecessarily.
+
 export function handleSessionExpired() {
     window.dispatchEvent(new Event("auth:session-expired"));
 }
@@ -30,10 +26,7 @@ const rawBaseQuery = fetchBaseQuery({
     },
 });
 
-// Any expired/invalid-token response (401 from the auth middleware, e.g.
-// "Not authorized, token invalid" / "Not authorized, no token" / "Not
-// authorized, token expired") clears the session and kicks back to login,
-// instead of every page having to check for it individually.
+
 const baseQuery = async (args, api, extraOptions) => {
     const result = await rawBaseQuery(args, api, extraOptions);
     if (result.error?.status === 401) {
@@ -47,7 +40,7 @@ export const api = createApi({
     baseQuery,
     tagTypes: [
         "Auth", "Records", "MukhyaSevika", "Dashboard", "Users", "Hierarchy",
-        "Tasks", "TaskSubmissions", "Grades", "Notices",
+        "Tasks", "TaskSubmissions", "Grades", "Notices", "SupervisorVisits",
     ],
 
     endpoints: (builder) => ({
@@ -220,6 +213,51 @@ export const api = createApi({
                 body: { status, remarks },
             }),
             invalidatesTags: ["MukhyaSevika"],
+        }),
+
+        // ---------------- SUPERVISOR VISITS (routes/supervisorVisitRoutes.js) - supervisor inspection form ----------------
+        getSupervisorVisits: builder.query({
+            query: (params = {}) => {
+                const qs = new URLSearchParams();
+                ["awcCode", "status", "formStatus", "fromDate", "toDate"].forEach((k) => {
+                    if (params[k]) qs.set(k, params[k]);
+                });
+                const s = qs.toString();
+                return `/supervisor-visits${s ? `?${s}` : ""}`;
+            },
+            providesTags: ["SupervisorVisits"],
+        }),
+        getSupervisorVisit: builder.query({
+            query: (id) => `/supervisor-visits/${id}`,
+            providesTags: (result, error, id) => [{ type: "SupervisorVisits", id }],
+        }),
+        getSupervisorPrefill: builder.query({
+            query: (awcCode) => `/supervisor-visits/prefill/${awcCode}`,
+        }),
+        startSupervisorVisit: builder.mutation({
+            query: (data) => ({ url: "/supervisor-visits", method: "POST", body: data }),
+            invalidatesTags: ["SupervisorVisits"],
+        }),
+        // section = general | a | b | c ; body = that section's fields (+ markComplete)
+        saveSupervisorVisitSection: builder.mutation({
+            query: ({ id, section, body }) => ({
+                url: `/supervisor-visits/${id}/sections/${section}`,
+                method: "PUT",
+                body,
+            }),
+            invalidatesTags: ["SupervisorVisits"],
+        }),
+        reviewSupervisorVisit: builder.mutation({
+            query: ({ id, status, remarks }) => ({
+                url: `/supervisor-visits/${id}/review`,
+                method: "PATCH",
+                body: { status, remarks },
+            }),
+            invalidatesTags: ["SupervisorVisits"],
+        }),
+        deleteSupervisorVisit: builder.mutation({
+            query: (id) => ({ url: `/supervisor-visits/${id}`, method: "DELETE" }),
+            invalidatesTags: ["SupervisorVisits"],
         }),
 
         // ---------------- DASHBOARD (routes/dashboardRoutes.js) - sector roll-up ----------------
@@ -442,6 +480,14 @@ export const {
     useGetMukhyaSevikaEntriesQuery,
     useCreateMukhyaSevikaEntryMutation,
     useReviewMukhyaSevikaEntryMutation,
+
+    useGetSupervisorVisitsQuery,
+    useGetSupervisorVisitQuery,
+    useGetSupervisorPrefillQuery,
+    useStartSupervisorVisitMutation,
+    useSaveSupervisorVisitSectionMutation,
+    useReviewSupervisorVisitMutation,
+    useDeleteSupervisorVisitMutation,
 
     useGetDashboardQuery,
 

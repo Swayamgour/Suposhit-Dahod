@@ -150,7 +150,7 @@ export default function TasksPage() {
   const { t } = useLanguage();
   const { role, user } = useAuth();
   const canAssign = role !== ROLES.AWC;
-  const canSubmit = [ROLES.SECTOR, ROLES.AWC].includes(role);
+  const canSubmit = [ROLES.SUPERVISOR, ROLES.SECTOR, ROLES.AWC].includes(role);
   const canReview = role !== ROLES.AWC;
 
   const { data, isLoading } = useGetTasksQuery({});

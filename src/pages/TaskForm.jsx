@@ -51,7 +51,7 @@ export default function TaskForm() {
 
   const scopeOptions = useMemo(() => {
     if (form.assignedToRole === "block") return (blockData?.blocks || []).map((b) => ({ code: b.code, name: b.name }));
-    if (form.assignedToRole === "sector") return (sectorData?.sectors || []).map((s) => ({ code: s.code, name: s.name }));
+    if (form.assignedToRole === "sector" || form.assignedToRole === "supervisor") return (sectorData?.sectors || []).map((s) => ({ code: s.code, name: s.name }));
     if (form.assignedToRole === "awc") return (awcData?.awcs || []).map((a) => ({ code: a.code, name: a.name }));
     return [];
   }, [form.assignedToRole, blockData, sectorData, awcData]);

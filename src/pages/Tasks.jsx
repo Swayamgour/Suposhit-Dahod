@@ -60,10 +60,10 @@ export default function Tasks() {
   const [createSubmission, { isLoading: submitting }] = useCreateTaskSubmissionMutation();
 
   const canAssign = role !== ROLES.AWC;
-  const canSubmit = [ROLES.SECTOR, ROLES.AWC].includes(role);
+  const canSubmit = [ROLES.SUPERVISOR, ROLES.SECTOR, ROLES.AWC].includes(role);
   const canReview = role !== ROLES.AWC;
 
-  const myScopeCode = { block: user?.blockCode, sector: user?.sectorCode, awc: user?.awcCode }[role];
+  const myScopeCode = { block: user?.blockCode, supervisor: user?.sectorCode, sector: user?.sectorCode, awc: user?.awcCode }[role];
 
   function isMine(task) {
     return (

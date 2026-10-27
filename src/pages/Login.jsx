@@ -275,7 +275,7 @@ export default function Login({ onSuccess }) {
             <p className="text-center text-[11px] leading-relaxed text-muted">
               You can login using your{" "}
               <span className="font-semibold text-ink">
-                Email, AWC Code, Sector Code, Block Code
+                Email, AWC Code, Sector Code, Supervisor Code (SUP + sector code), Block Code
               </span>{" "}
               or{" "}
               <span className="font-semibold text-ink">

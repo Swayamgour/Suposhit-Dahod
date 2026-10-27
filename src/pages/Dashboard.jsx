@@ -109,6 +109,7 @@ const LEVEL_OPTIONS = [
 const ROLE_LEVEL_ACCESS = {
   [ROLES.DISTRICT]: ["district", "block", "sector", "awc"],
   [ROLES.BLOCK]: ["block", "sector", "awc"],
+  [ROLES.SUPERVISOR]: ["sector", "awc"],
   [ROLES.SECTOR]: ["sector", "awc"],
   [ROLES.AWC]: ["awc"],
 };
@@ -120,6 +121,7 @@ const ROLE_LEVEL_ACCESS = {
 const DEFAULT_LEVEL_BY_ROLE = {
   [ROLES.DISTRICT]: "block",
   [ROLES.BLOCK]: "sector",
+  [ROLES.SUPERVISOR]: "awc",
   [ROLES.SECTOR]: "awc",
   [ROLES.AWC]: "awc",
 };

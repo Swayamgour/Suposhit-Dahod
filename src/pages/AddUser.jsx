@@ -48,8 +48,9 @@ export default function AddUser() {
 
   const blocks = blockData?.blocks || [];
   const myRank = ROLE_ORDER.indexOf(myRole);
-  const needsBlock = myRank < ROLE_ORDER.indexOf(ROLES.BLOCK) && [ROLES.BLOCK, ROLES.SECTOR, ROLES.AWC].includes(formData.role);
-  const needsSector = myRank < ROLE_ORDER.indexOf(ROLES.SECTOR) && [ROLES.SECTOR, ROLES.AWC].includes(formData.role);
+  const needsBlock = myRank < ROLE_ORDER.indexOf(ROLES.BLOCK) && [ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR, ROLES.AWC].includes(formData.role);
+  // supervisor / sector users are locked to their own sector by the API, so only district/block pick one
+  const needsSector = myRank < ROLE_ORDER.indexOf(ROLES.SUPERVISOR) && [ROLES.SUPERVISOR, ROLES.SECTOR, ROLES.AWC].includes(formData.role);
   const needsAwc = formData.role === ROLES.AWC;
 
   // When a dropdown isn't shown (because it's locked to the creator's own

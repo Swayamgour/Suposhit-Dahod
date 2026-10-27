@@ -4,19 +4,21 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 export const ROLES = {
   DISTRICT: "district", // PO / DDO - sees everything
   BLOCK: "block", // CDPO
-  SECTOR: "sector", // MS / Supervisor
+  SUPERVISOR: "supervisor", // exactly 1 per sector - oversees the whole sector (incl. its MS)
+  SECTOR: "sector", // MS (Mukhya Sevika)
   AWC: "awc", // Worker
 };
 
 export const ROLE_LABELS = {
   [ROLES.DISTRICT]: "District (Manager)",
   [ROLES.BLOCK]: "Block (CDPO)",
+  [ROLES.SUPERVISOR]: "Supervisor",
   [ROLES.SECTOR]: "Sector (Mukhya Sevika)",
   [ROLES.AWC]: "AWC (Worker)",
 };
 
 // Order matters - index 0 is topmost. Mirrors icds-backend/config/roles.js ROLE_ORDER.
-export const ROLE_ORDER = [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR, ROLES.AWC];
+export const ROLE_ORDER = [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR, ROLES.AWC];
 
 // True if `reviewerRole` outranks `submitterRole` (can approve/reject their submissions)
 export function outranks(reviewerRole, submitterRole) {

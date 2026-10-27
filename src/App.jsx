@@ -19,6 +19,9 @@ import ReportsPage from "./pages/ReportsPage.jsx";
 import { useAuth, ROLES } from "./context/AuthContext.jsx";
 import ApplicationUsersAwc from "./pages/ApplicationUsersAwc.jsx";
 import Profile from "./pages/Profile.jsx";
+import SupervisorVisits from "./pages/SupervisorVisits.jsx";
+import SupervisorVisitForm from "./pages/SupervisorVisitForm.jsx";
+import SupervisorVisitSection from "./pages/SupervisorVisitSection.jsx";
 
 // Wraps a route element and only renders it if the logged-in user's role is
 // in `allow`. Mirrors the backend's own role checks (authorize / role ===
@@ -70,7 +73,7 @@ export default function App() {
         <Route
           path="/applications"
           element={
-            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
               <ApplicationDashboard />
             </RoleGate>
           }
@@ -78,7 +81,7 @@ export default function App() {
         <Route
           path="/applications/users"
           element={
-            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
               <ApplicationUsers />
             </RoleGate>
           }
@@ -86,7 +89,7 @@ export default function App() {
         <Route
           path="/AwcUser"
           element={
-            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
               <ApplicationUsersAwc />
             </RoleGate>
           }
@@ -94,7 +97,7 @@ export default function App() {
         <Route
           path="/Profile"
           element={
-            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
               <Profile />
             </RoleGate>
           }
@@ -102,7 +105,7 @@ export default function App() {
         <Route
           path="/applications/users/new"
           element={
-            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
               <AddUser />
             </RoleGate>
           }
@@ -113,7 +116,7 @@ export default function App() {
         <Route
           path="/mukhya-sevika"
           element={
-            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
               <MukhyaDevikaDetails />
             </RoleGate>
           }
@@ -123,6 +126,33 @@ export default function App() {
           element={
             <RoleGate allow={[ROLES.SECTOR]}>
               <MukhyaDevikaEntry />
+            </RoleGate>
+          }
+        />
+
+        {/* Supervisor inspection form - supervisor fills (1 per sector, any AWC in own
+            sector); block/district review. Mirrors /api/supervisor-visits */}
+        <Route
+          path="/supervisor-visits"
+          element={
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR]}>
+              <SupervisorVisits />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="/supervisor-visits/:id"
+          element={
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR]}>
+              <SupervisorVisitForm />
+            </RoleGate>
+          }
+        />
+        <Route
+          path="/supervisor-visits/:id/:section"
+          element={
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR]}>
+              <SupervisorVisitSection />
             </RoleGate>
           }
         />
@@ -140,7 +170,7 @@ export default function App() {
         <Route
           path="/reports"
           element={
-            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SECTOR]}>
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
               <ReportsPage />
             </RoleGate>
           }

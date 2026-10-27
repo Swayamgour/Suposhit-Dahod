@@ -1,3 +1,4 @@
+import { supervisorVisitTranslations } from "./supervisorVisitTranslations.js";
 export const languages = [
   { code: "en", label: "English", native: "English" },
   { code: "hi", label: "Hindi", native: "हिन्दी" },
@@ -1894,3 +1895,8 @@ export const translations = {
     "login.identifierExample": "ઉદાહરણ: email@domain.com અથવા 24445010101",
   },
 };
+
+// Supervisor inspection module strings (en / hi / gu)
+Object.keys(supervisorVisitTranslations).forEach((lng) => {
+  Object.assign(translations[lng], supervisorVisitTranslations[lng]);
+});
