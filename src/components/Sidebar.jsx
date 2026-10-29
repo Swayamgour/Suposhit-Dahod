@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, ClipboardList, BarChart3, Info, X, AppWindow,
-  ListTodo, Award, Bell, FileDown, ClipboardCheck,
+  ListTodo, Award, Bell, FileDown, ClipboardCheck, Trophy,
 } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useAuth, ROLES } from "../context/AuthContext.jsx";
@@ -22,6 +22,7 @@ const NAV_LINKS = [
   { to: "/supervisor-visits", labelKey: "sv.nav", icon: ClipboardCheck, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR] },
   { to: "/tasks", label: "Tasks", icon: ListTodo, roles: ALL },
   // { to: "/grades", label: "Performance", icon: Award, roles: ALL },
+  { to: "/grades/ranking", labelKey: "ranking.nav", icon: Trophy, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR] },
   // { to: "/notices", label: "Notices", icon: Bell, roles: ALL },
   { to: "/reports", label: "Reports", icon: FileDown, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR] },
   // { to: "/applications/users/new", label: "Application Dashboard", icon: AppWindow, roles: [ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR] },

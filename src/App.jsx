@@ -14,6 +14,7 @@ import ApplicationUsers from "./pages/ApplicationUsers.jsx";
 import AddUser from "./pages/AddUser.jsx";
 import TasksPage from "./pages/TasksPage.jsx";
 import GradesPage from "./pages/GradesPage.jsx";
+import AwcRanking from "./pages/AwcRanking.jsx";
 import NoticesPage from "./pages/NoticesPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import { useAuth, ROLES } from "./context/AuthContext.jsx";
@@ -162,6 +163,16 @@ export default function App() {
 
         {/* Performance grading - all roles can view (awc sees only its own via scopeFilter) */}
         <Route path="/grades" element={<GradesPage />} />
+
+        {/* AWC grade + ranking (GET /api/grades/ranking) - backend 403s awc role, so gate it too */}
+        <Route
+          path="/grades/ranking"
+          element={
+            <RoleGate allow={[ROLES.DISTRICT, ROLES.BLOCK, ROLES.SUPERVISOR, ROLES.SECTOR]}>
+              <AwcRanking />
+            </RoleGate>
+          }
+        />
 
         {/* Auto-generated notices - all roles */}
         <Route path="/notices" element={<NoticesPage />} />

@@ -403,6 +403,30 @@ export const api = createApi({
             invalidatesTags: ["Grades"],
         }),
 
+        // AWC performance ranking (GET /api/grades/ranking) - district ranks ALL sectors together;
+        // blockCode / sectorCode / grade / search / page / limit are optional filters.
+        getGradeRanking: builder.query({
+            query: (params = {}) => {
+                const q = new URLSearchParams();
+                Object.entries(params).forEach(([k, v]) => {
+                    if (v !== undefined && v !== null && v !== "") q.set(k, v);
+                });
+                return `/grades/ranking?${q.toString()}`;
+            },
+            providesTags: ["Grades"],
+        }),
+        // Month-by-month score / grade / district rank of one AWC
+        getAwcGradeHistory: builder.query({
+            query: ({ awcCode, months = 6, to }) =>
+                `/grades/awc/${encodeURIComponent(awcCode)}?months=${months}${to ? `&to=${to}` : ""}`,
+            providesTags: ["Grades"],
+        }),
+        // Store/refresh the monthly snapshot ({ period } for the district, + awcCode for one AWC)
+        recalculateGrades: builder.mutation({
+            query: (body) => ({ url: "/grades/recalculate", method: "POST", body }),
+            invalidatesTags: ["Grades"],
+        }),
+
         // ---------------- NOTICES (routes/noticeRoutes.js) ----------------
         getNotices: builder.query({
             query: (params = {}) => {
@@ -507,6 +531,9 @@ export const {
     useGetGradesQuery,
     useGenerateGradesMutation,
     useUpdateGradeMutation,
+    useGetGradeRankingQuery,
+    useGetAwcGradeHistoryQuery,
+    useRecalculateGradesMutation,
 
     useGetNoticesQuery,
     useAcknowledgeNoticeMutation,
