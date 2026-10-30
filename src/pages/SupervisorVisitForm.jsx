@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Circle, ChevronRight, Trash2, MapPin } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, ChevronRight, Trash2, MapPin, Lock } from "lucide-react";
 import { ReviewActions, StatusBadge } from "../components/ApprovalStatus.jsx";
-import { SECTIONS, SECTION_ORDER } from "../components/supervisor/supervisorVisitConfig.js";
+import { SECTIONS, SECTION_ORDER, isSectionUnlocked } from "../components/supervisor/supervisorVisitConfig.js";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import {
   useGetSupervisorVisitQuery,
@@ -115,20 +115,27 @@ export default function SupervisorVisitForm() {
           const cfg = SECTIONS[key];
           const st = visit.sectionStatus?.[cfg.field];
           const done = st?.completed;
+          // step by step: a section opens only after the previous one is completed
+          const locked = isOwner && !isSectionUnlocked(key, visit);
           return (
             <button
               key={key}
               type="button"
+              disabled={locked}
               onClick={() => navigate(`/supervisor-visits/${id}/${key}`)}
-              className={`flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left text-white shadow-card transition-transform active:scale-[0.99] ${
-                done ? "bg-gradient-to-r from-emerald-600 to-emerald-400" : "bg-gradient-to-r from-slate-500 to-slate-400"
+              className={`flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left text-white shadow-card transition-transform ${
+                locked
+                  ? "cursor-not-allowed bg-slate-300 opacity-70 dark:bg-slate-700"
+                  : done
+                  ? "bg-gradient-to-r from-emerald-600 to-emerald-400 active:scale-[0.99]"
+                  : "bg-gradient-to-r from-slate-500 to-slate-400 active:scale-[0.99]"
               }`}
             >
               <div>
                 <p className="font-display text-lg font-bold">{t(`sv.section.${key}`)}</p>
                 <p className="mt-1 flex items-center gap-1.5 text-sm">
-                  {done ? <CheckCircle2 size={16} /> : <Circle size={16} />}
-                  {done ? t("sv.completed") : t("sv.notStarted")}
+                  {locked ? <Lock size={16} /> : done ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                  {locked ? t("sv.locked") : done ? t("sv.completed") : t("sv.notStarted")}
                 </p>
                 {done && st.submittedAt && (
                   <p className="mt-0.5 text-xs text-white/85">
@@ -136,7 +143,7 @@ export default function SupervisorVisitForm() {
                   </p>
                 )}
               </div>
-              <ChevronRight size={22} />
+              {locked ? <Lock size={20} /> : <ChevronRight size={22} />}
             </button>
           );
         })}

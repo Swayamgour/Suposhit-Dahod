@@ -29,29 +29,40 @@ function StartVisitModal({ onClose }) {
   const awcs = data?.awcs || [];
   const [awcCode, setAwcCode] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [startVisit, { isLoading: starting }] = useStartSupervisorVisitMutation();
 
   async function handleStart() {
+    if (submitting) return;
+
     setError("");
+
     if (!awcCode) {
       setError(t("sv.errSelectAwc"));
       return;
     }
+
+    setSubmitting(true);
+
     let loc = null;
+
     try {
-      loc = await captureLocation(); // GPS check-in is best-effort
-    } catch {
-      loc = null;
-    }
-    try {
+      try {
+        loc = await captureLocation();
+      } catch {
+        loc = null;
+      }
+
       const res = await startVisit({
         awcCode,
         checkInLatitude: loc?.latitude,
         checkInLongitude: loc?.longitude,
       }).unwrap();
+
       navigate(`/supervisor-visits/${res.visit._id}`);
     } catch (err) {
       setError(err?.data?.message || t("sv.errStart"));
+      setSubmitting(false);
     }
   }
 
@@ -75,12 +86,22 @@ function StartVisitModal({ onClose }) {
         </select>
         {error && <p className="mt-3 rounded-lg bg-coral-light px-3 py-2 text-xs font-semibold text-coral">{error}</p>}
         <button
+          type="button"
           onClick={handleStart}
-          disabled={starting}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:opacity-70"
+          disabled={submitting}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-card hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
         >
-          <ClipboardCheck size={16} />
-          {starting ? t("sv.starting") : t("sv.startVisit")}
+          {submitting ? (
+            <>
+              <RefreshCw size={16} className="animate-spin" />
+              {t("sv.starting")}
+            </>
+          ) : (
+            <>
+              <ClipboardCheck size={16} />
+              {t("sv.startVisit")}
+            </>
+          )}
         </button>
       </div>
     </div>

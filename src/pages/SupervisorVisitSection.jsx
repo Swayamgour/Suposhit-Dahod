@@ -7,7 +7,10 @@ import {
   getIn,
   setIn,
   isMissing,
-  requiredPaths,
+  missingPaths,
+  clearHidden,
+  isSectionUnlocked,
+  normDate,
   sectionDefaults,
 } from "../components/supervisor/supervisorVisitConfig.js";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
@@ -44,7 +47,7 @@ export default function SupervisorVisitSection() {
   useEffect(() => {
     if (!visit || !cfg || prefillLoading || values !== null) return;
     let init = JSON.parse(JSON.stringify(visit[cfg.field] || {}));
-    if (init.visitDate) init.visitDate = String(init.visitDate).slice(0, 10);
+    if (init.visitDate) init.visitDate = normDate(init.visitDate);
     const defaults = sectionDefaults(section, { prefill: prefillData?.prefill, visit });
     Object.entries(defaults).forEach(([p, v]) => {
       if (isMissing(getIn(init, p))) init = setIn(init, p, v);
@@ -68,8 +71,13 @@ export default function SupervisorVisitSection() {
   const locked = visit.formStatus === "submitted" && visit.status !== "rejected";
   const readOnly = !isOwner || locked;
 
+  // Sections open step by step (General -> A -> B -> C): block direct URL access too.
+  if (isOwner && !isSectionUnlocked(section, visit)) {
+    return <Navigate to={`/supervisor-visits/${id}`} replace />;
+  }
+
   const onChange = (path, value) => {
-    setValues((v) => setIn(v, path, value));
+    setValues((v) => clearHidden(section, setIn(v, path, value)));
     if (missing.size) {
       const next = new Set(missing);
       next.delete(path);
@@ -80,7 +88,7 @@ export default function SupervisorVisitSection() {
   async function save(markComplete) {
     setError("");
     if (markComplete) {
-      const miss = requiredPaths(section).filter((p) => isMissing(getIn(values, p)));
+      const miss = missingPaths(section, values);
       if (miss.length) {
         setMissing(new Set(miss));
         setError(t("sv.errRequired"));
@@ -120,6 +128,7 @@ export default function SupervisorVisitSection() {
       )}
 
       <div className="space-y-4">
+        {/* {console.log(cfg)} */}
         {cfg.items.map((item, i) => (
           <FormItem
             key={item.path || `${item.type}-${i}`}

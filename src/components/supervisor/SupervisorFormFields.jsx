@@ -4,7 +4,7 @@ import { Camera, Loader2, Trash2, MapPin, X } from "lucide-react";
 import { useLanguage } from "../../i18n/LanguageContext.jsx";
 import { useUploadPhotosMutation } from "../../redux/api.jsx";
 import { captureLocation } from "../../utils/apiClient.js";
-import { MONTHS, getIn } from "./supervisorVisitConfig.js";
+import { MONTHS, getIn, stockPath, stockValue } from "./supervisorVisitConfig.js";
 
 const inputClass =
   "w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-bg disabled:opacity-80";
@@ -313,7 +313,6 @@ function PhotoField({ value, onChange, readOnly }) {
 }
 
 // ------------------------------------------------------------- stock helpers
-const getRow = (arr, key) => (arr || []).find((r) => r.item === key) || {};
 const setRow = (arr, key, field, val) => {
   const list = [...(arr || [])];
   const i = list.findIndex((r) => r.item === key);
@@ -386,13 +385,13 @@ export default function FormItem({ item, values, onChange, readOnly, missing }) 
               disabled={readOnly}
               value={v ?? ""}
               onChange={(e) => onChange(item.path, e.target.value)}
-              placeholder={t("sv.remarksPlaceholder")}
+              placeholder={item.placeholder ? pick(item.placeholder) : t("sv.remarksPlaceholder")}
               className={inputClass}
             />
           ) : (
             <input
               type={item.type}
-              disabled={readOnly}
+              disabled={readOnly || item.readOnly}
               value={v ?? ""}
               onChange={(e) => onChange(item.path, e.target.value)}
               className={inputClass}
@@ -499,8 +498,11 @@ export default function FormItem({ item, values, onChange, readOnly, missing }) 
 
     case "photo":
       return (
-        <div className={card(false)}>
-          <Label>{pick(item.label)}</Label>
+        <div className={card(bad(item.path))}>
+          <Label>
+            {pick(item.label)}
+            {star}
+          </Label>
           <PhotoField value={getIn(values, item.path)} onChange={(v) => onChange(item.path, v)} readOnly={readOnly} />
         </div>
       );
@@ -551,7 +553,8 @@ export default function FormItem({ item, values, onChange, readOnly, missing }) 
               <p className="mb-3 text-sm font-bold text-ink">{pick(b.label)}</p>
               <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 {item.fields.map((f) => {
-                  const cur = isArray ? getRow(getIn(values, item.path), b.key)[f.key] : getIn(values, `${item.path}.${b.key}.${f.key}`);
+                  const cur = stockValue(item, values, b.key, f.key);
+                  const vp = stockPath(item, b.key, f.key);
                   const change = (x) =>
                     isArray
                       ? onChange(item.path, setRow(getIn(values, item.path), b.key, f.key, x))
@@ -560,8 +563,9 @@ export default function FormItem({ item, values, onChange, readOnly, missing }) 
                     <div key={f.key}>
                       <label className="mb-1.5 block text-xs font-semibold text-muted">
                         {pick(f.label)} {isArray && f.key === "found" ? pick(item.foundSuffix) : ""}
+                        <span className="text-coral"> *</span>
                       </label>
-                      <NumberInput value={cur} onChange={change} readOnly={readOnly} />
+                      <NumberInput value={cur} onChange={change} readOnly={readOnly} invalid={bad(vp)} />
                     </div>
                   );
                 })}

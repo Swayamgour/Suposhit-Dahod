@@ -41,6 +41,16 @@ export function setIn(obj, path, value) {
 
 export const isMissing = (v) => v === undefined || v === null || v === "";
 
+// ---- India time (IST) helpers - always Asia/Kolkata, whatever the device timezone ----
+const IST = "Asia/Kolkata";
+// Date -> "YYYY-MM-DD" in IST
+export const istDate = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: IST }).format(new Date(d));
+// current time -> "HH:mm" (24h) in IST
+export const nowTimeIST = () =>
+  new Intl.DateTimeFormat("en-GB", { timeZone: IST, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
+// saved value ("2026-10-30" or an ISO string) -> "YYYY-MM-DD" in IST
+export const normDate = (v) => (!v ? v : String(v).includes("T") ? istDate(v) : String(v).slice(0, 10));
+
 const YES_NO = (path, label, required = true) => ({ type: "yesno", path, label, required });
 
 const STOCK_FIELDS = [
@@ -81,6 +91,7 @@ export const SECTIONS = {
       {
         type: "date",
         path: "visitDate",
+        readOnly: true, // auto-picked, not editable
         label: L(
           "1. Date of visit to the Anganwadi centre",
           "1. आंगनवाड़ी केंद्र के भ्रमण की तारीख",
@@ -95,6 +106,7 @@ export const SECTIONS = {
       {
         type: "time",
         path: "arrivalTime",
+        readOnly: true, // auto-picked (current India time), not editable
         label: L("4. Time of arrival at the Anganwadi", "4. आंगनवाड़ी में आने का समय", "૪. આંગણવાડીમાં આવવાનો સમય :"),
       },
     ],
@@ -131,6 +143,18 @@ export const SECTIONS = {
           "8. રિપેરિંગની જરૂર છે? (નોંધ: ઇલેક્ટ્રિકલ વર્ક, પ્લમ્બિંગ વર્ક, લાઇટિંગ ઇન્સ્ટોલેશન, શૌચાલયનું સમારકામ અથવા અન્ય નાના સમારકામ)?"
         )
       ),
+      {
+        type: "textarea",
+        path: "building.repairType",
+        noNumber: true, // follow-up of the question above - keeps the numbering unchanged
+        showIf: (v) => getIn(v, "building.repairNeeded") === true,
+        placeholder: L("Write the type of repair needed...", "किस प्रकार की मरम्मत चाहिए लिखें...", "કેવા પ્રકારનું સમારકામ જોઈએ તે લખો..."),
+        label: L(
+          "Which type of repairing is needed?",
+          "किस प्रकार की मरम्मत चाहिए?",
+          "કેવા પ્રકારનું રિપેરિંગ જોઈએ છે?"
+        ),
+      },
       YES_NO(
         "building.upgradationNeeded",
         L(
@@ -139,6 +163,18 @@ export const SECTIONS = {
           "9. નવીનીકરણ(અપગ્રેડેશન)ની જરૂર છે? (નોંધ:પ્લાસ્ટર કામ,ચણતર કામ,રંગકામ(ફ્લોરિંગ વર્ક અથવા મુખ્ય સિવિલ વર્ક)?"
         )
       ),
+      {
+        type: "textarea",
+        path: "building.upgradationReason",
+        noNumber: true,
+        showIf: (v) => getIn(v, "building.upgradationNeeded") === true,
+        placeholder: L("Write the reason / type of renovation needed...", "नवीनीकरण का कारण / प्रकार लिखें...", "નવીનીકરણનું કારણ / પ્રકાર લખો..."),
+        label: L(
+          "Reason for renovation (upgradation)",
+          "नवीनीकरण (अपग्रेडेशन) का कारण",
+          "નવીનીકરણ (અપગ્રેડેશન)નું કારણ"
+        ),
+      },
       YES_NO("building.toiletWorking", L("10. Is the toilet in working condition?", "10. क्या शौचालय चालू हालत में है?", "10. શૌચાલય ચાલુ હાલતમાં છે?")),
       YES_NO(
         "building.drinkingWater",
@@ -487,22 +523,84 @@ export const SECTION_ORDER = ["general", "a", "b", "c"];
 const flatten = (items) =>
   items.flatMap((it) => [it, ...(it.children ? flatten(it.children) : []), ...(it.fields || [])]);
 
-// Paths marked * - mirrors REQUIRED in icds-backend/controllers/supervisorVisitController.js
-export function requiredPaths(sectionId) {
+// ---------------------------------------------------------------------
+// EVERY field is required, except the ones listed here.
+// ---------------------------------------------------------------------
+const OPTIONAL_PATHS = new Set(["remarks"]);
+const INPUT_TYPES = new Set([
+  "yesno", "number", "text", "textarea", "time", "date", "monthYear", "select", "radio", "multicheck", "photo",
+]);
+{
+  Object.values(SECTIONS).forEach((sec) =>
+    flatten(sec.items).forEach((it) => {
+      if (it.path && !OPTIONAL_PATHS.has(it.path) && (INPUT_TYPES.has(it.type) || !it.type)) it.required = true;
+    })
+  );
+}
+
+const stockRow = (arr, key) => (arr || []).find((r) => r.item === key) || {};
+
+// Value of a stock / stockArray cell. Virtual path = `${item.path}.${block}.${field}`
+export const stockPath = (item, block, field) => `${item.path}.${block}.${field}`;
+export const stockValue = (item, values, block, field) =>
+  item.type === "stockArray"
+    ? stockRow(getIn(values, item.path), block)[field]
+    : getIn(values, stockPath(item, block, field));
+
+// Every required path that is still empty (conditional questions are skipped while hidden)
+export function missingPaths(sectionId, values) {
   const out = [];
-  flatten(SECTIONS[sectionId].items).forEach((it) => {
-    if (!it.required || !it.path) return;
-    // month/year pickers need both parts (backend checks ".month" and ".year")
-    if (it.type === "monthYear") out.push(`${it.path}.month`, `${it.path}.year`);
-    else out.push(it.path);
-  });
+  const walk = (items) =>
+    items.forEach((it) => {
+      if (it.showIf && !it.showIf(values)) return;
+      if (it.children) walk(it.children);
+      if (it.type === "stock" || it.type === "stockArray") {
+        it.blocks.forEach((b) =>
+          it.fields.forEach((f) => {
+            if (isMissing(stockValue(it, values, b.key, f.key))) out.push(stockPath(it, b.key, f.key));
+          })
+        );
+        return;
+      }
+      if (it.fields) it.fields.forEach((f) => f.required && isMissing(getIn(values, f.path)) && out.push(f.path));
+      if (!it.required || !it.path) return;
+      const v = getIn(values, it.path);
+      if (it.type === "monthYear") {
+        // month/year pickers need both parts (backend checks ".month" and ".year")
+        if (isMissing(v?.month)) out.push(`${it.path}.month`);
+        if (isMissing(v?.year)) out.push(`${it.path}.year`);
+      } else if (isMissing(v) || (Array.isArray(v) && v.length === 0) || (it.type === "photo" && !v?.url)) {
+        out.push(it.path);
+      }
+    });
+  walk(SECTIONS[sectionId].items);
   return out;
+}
+
+// When a Yes/No answer hides a follow-up box, wipe what was typed in it.
+export function clearHidden(sectionId, values) {
+  let next = values;
+  flatten(SECTIONS[sectionId].items).forEach((it) => {
+    if (it.showIf && it.path && !it.showIf(next) && !isMissing(getIn(next, it.path))) next = setIn(next, it.path, "");
+  });
+  return next;
+}
+
+// Sections open one after another: General -> A -> B -> C.
+// A section is open only when the one before it has been completed.
+export function isSectionUnlocked(key, visit) {
+  const i = SECTION_ORDER.indexOf(key);
+  if (i <= 0) return true;
+  return !!visit?.sectionStatus?.[SECTIONS[SECTION_ORDER[i - 1]].field]?.completed;
 }
 
 // pre-fill values that come from the AWC / visit (only applied when still empty)
 export function sectionDefaults(sectionId, { prefill, visit }) {
   const d = {};
-  if (sectionId === "general" && visit?.date) d.visitDate = new Date(visit.date).toISOString().slice(0, 10);
+  if (sectionId === "general") {
+    d.visitDate = visit?.date ? istDate(visit.date) : istDate(); // auto, IST
+    d.arrivalTime = nowTimeIST(); // auto, current India time
+  }
   if (sectionId === "a" && prefill?.registeredChildren3To6 != null)
     d["supplementaryNutrition.registeredChildren3To6"] = prefill.registeredChildren3To6;
   if (sectionId === "b" && prefill?.registeredChildren3To6 != null)
@@ -522,7 +620,7 @@ export function sectionDefaults(sectionId, { prefill, visit }) {
   let n = 0;
   SECTION_ORDER.forEach((id) => {
     SECTIONS[id].items.forEach((item) => {
-      if (item.type === "heading" || item.type === "info") return;
+      if (item.type === "heading" || item.type === "info" || item.noNumber) return;
       if (!item.sameNumber) n += 1;
       Object.keys(item.label).forEach((lng) => {
         item.label[lng] = `${n}. ${item.label[lng].replace(STRIP, "")}`;
